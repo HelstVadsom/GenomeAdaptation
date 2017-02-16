@@ -28,28 +28,26 @@ for iEnv in xrange(NR_ENVIRONMENTS):
 
             ## Divide
             toDivide = (simEnv['cell_cycle_time'][0:nr_alive] <= t) #.dot(simEnv['age'][0:nr_alive] >= 1)
-            #print simEnv[18,19]
-            toBirth = np.arange(nr_alive,(nr_alive + len(toDivide)))
-            #simEnv[toBirth] = simEnv[toDivide] # transcribe properties
+            nr_Divide = len(toDivide)
+            toBirth = np.arange(nr_alive,(nr_alive + nr_Divide))
+            simEnv['founder_id'][toBirth] = simEnv['founder_id'][toDivide]
+            simEnv['lag_time'][toBirth] = LAG_TIMES[simEnv['founder_id'][toDivide]]
 
             ## Mutate
-            toMutate = np.random.random([len(toDivide),1]) < PROB_MUTATION
+            toMutate = np.random.random([nr_Divide,1]) < PROB_MUTATION
             if any(toMutate):
-                idxMutate = nonzero(toMutate) # Which individuals dividing that mutate.
-                mutateORF = np.random.random([sum(toMutate),1]) * (data1_Cum[-1]) # pick mutations
-                idxORF = np.searchsorted(data1_Cum, mutateORF, side='right') # see which mutation it was
+                idxMutate = nonzero(toMutate) # index mutating cells
+                mutateORF = np.random.random([sum(toMutate),1]) * (data1_Cum[-1]) # pick mutation
+                idxORF = np.searchsorted(data1_Cum, mutateORF, side='right') # peek mutation
                 # \todo: check if that mutation has already happend.
                 # calculate mutation impact on cell cycle time
                 simEnv['cell_cycle_time'][idxMutate[0]] = simEnv['cell_cycle_time'][idxMutate[0]] + \
                                                           data4[idxORF,iEnv].T*(CELL_CYCLE_TIMES[simEnv['founder_id'][idxMutate[0]]])
-            nr_alive += 1
-            # \todo: do mutate, in both or just ONE? calculate new ccycle time etc...
-            # \todo: divide: set age, founder id
-            # \todo: add born individuals to existing ones
             # Population ages
-            nr_alive += 1 # expand to batch
             simEnv['age'][0:nr_alive] += 0.1
+            nr_alive += 1#nr_Divide #Something is weird
             # \todo: check cycle exit condition. stillInCycle = 0
+
         # \todo: Sample for next cycle
         # \todo: save importants
     # \todo: save importants
