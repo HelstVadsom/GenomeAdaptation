@@ -1,11 +1,12 @@
 # Initilization of Constants, parameters and distributions.
-#import numpy as np
+import numpy as np
+from LoadData import data3
 
 # GENERAL
 DTYPE1 = 'float16'
 DTYPE2 = 'uint8'
 MINIMUM_TIME_RESOLUTION = .1 # [min] (0.1 min = 6 sek) min: ~6 otherwise change float16 @ CreateInd...
-
+# should be quantized to float16 decimal
 MUTATION_RATE = 0.33*10**-9 # per base, per division.
 GENOME_SIZE = 1.3*10**7 # nr. of bases
 ORF_SIZE = sum(data3)
@@ -27,11 +28,6 @@ GENOME_LENGTH = 5 # Nr. of possible mutations. max: 9, otherwise change uint8 @ 
 LAG_TIMES = MEAN_LAG_TIME + np.random.normal(0, 1, [FOUNDER_COUNT])
 CELL_CYCLE_TIMES = MEAN_CELL_CYCLE_TIME + np.random.normal(0, 1, [FOUNDER_COUNT])
 FOUNDER_ID = range(FOUNDER_COUNT) #np.array(range(FOUNDER_COUNT)).T # max: 4,294,967,295
-
-#MUTATION_PROB = data1[range(5)]
-
-#MUTATION_CELL_CYCLE_EFFECT = [0.5, 1.2
-
 
 ## CHANGEABLE:
 # scalars
