@@ -1,7 +1,5 @@
-# Not implemented: LAG_EXIT_TIME,CELL_CYCLE_TIME, they don't seem intrinsic to the cell.
-# Hence lag_time and cell_cycle_time is the actual.
-# GENOME was renamed to mutation, Needs to be binarized to interpret.
-# PARENTAL was renamed to founder_ID.
+#import numpy as np
+from InitilizeParameters import *
 
 # pre-allocate
 simEnv = np.zeros(MAXIMUM_NR_AGENTS,dtype = {'names':['lag_time','lag_progress','cell_cycle_time','mutation','founder_id','age'],\
@@ -14,4 +12,3 @@ simEnv['cell_cycle_time'] = cell_cycle_time
 simEnv['mutation'] = mutation
 simEnv['founder_id'] = founder_id
 simEnv['age'] = age
-
