@@ -5,7 +5,6 @@ import numpy as np
 #execfile("CreateIndividuals.py")
 
 from LoadData import *
-# \todo: HERE, Decide which mutations to look at.
 from InitilizeParameters import *
 from CreateIndividuals import simEnv
 
@@ -14,9 +13,8 @@ from CreateIndividuals import simEnv
 
 def run():
     nr_alive = FOUNDER_COUNT
-    nr_mutated = 0
+    nr_mutations = 0
     for iEnv in xrange(NR_ENVIRONMENTS):
-        # \todo: set mutations and effects
         for iCycle in xrange(NR_CYCLES):
             print 'iEnv = ', iEnv, 'iCycle = ', iCycle
             t = 80
@@ -30,32 +28,42 @@ def run():
                     simEnv['lag_progress'][alive_n_lag] = 1
 
                 ## Divide
-                toDivide = (simEnv['cell_cycle_time'][0:nr_alive] <= t) #.dot(simEnv['age'][0:nr_alive] >= 1)
-                nr_Divide = np.sum(toDivide)
-                toBirth = np.arange(nr_alive,(nr_alive + nr_Divide))
-                simEnv['founder_id'][toBirth] = simEnv['founder_id'][toDivide]
-                simEnv['lag_time'][toBirth] = LAG_TIMES[simEnv['founder_id'][toDivide]]
-                cct = CELL_CYCLE_TIMES[simEnv['founder_id'][toDivide]]
-                simEnv['cell_cycle_time'][toDivide] = simEnv['cell_cycle_time'][toDivide] + cct
-                simEnv['cell_cycle_time'][toBirth] = simEnv['cell_cycle_time'][toDivide]
-
-                ## Mutate
-                toMutate = np.random.random(nr_Divide) < PROB_MUTATION
-                if any(toMutate):
-                    mutateORF = np.random.random([sum(toMutate),1]) * (data1_Cum[-1]) # pick mutation
-                    idxORF = np.searchsorted(data1_Cum, mutateORF, side='right') # peek mutation
-                    # \todo: check if that mutation has already happend.
-                    # update cell cycle time
+                toDivide = (simEnv['next_divition'][0:nr_alive] <= t) #.dot(simEnv['age'][0:nr_alive] >= 1)
+                if any(toDivide):
+                    nr_Divide = np.sum(toDivide)
+                    #print nr_Divide
+                    #print np.nonzero(toDivide)[0]
                     divided = np.nonzero(toDivide)[0]
-                    nr_mutated += len(divided)
-                    simEnv['cell_cycle_time'][toBirth[toMutate]] = simEnv['cell_cycle_time'][divided[toMutate]] + \
-                                                                   data4[idxORF,iEnv].T*(CELL_CYCLE_TIMES[simEnv['founder_id'][divided[toMutate]]]) # wrong: implement nextPoint to divide
-                # Population ages
+                    toBirth = np.arange(nr_alive,(nr_alive + nr_Divide))
+                    simEnv['founder_id'][toBirth] = divided
+                    simEnv['lag_time'][toBirth] = LAG_TIMES[simEnv['founder_id'][toDivide]]
+                    simEnv['cell_cycle_time'][toBirth] = simEnv['cell_cycle_time'][toDivide]
+                    simEnv['next_divition'][toDivide] = t + simEnv['cell_cycle_time'][toDivide]
+                    simEnv['next_divition'][toBirth] = simEnv['next_divition'][toDivide]
+                    #CELL_CYCLE_TIMES[simEnv['founder_id'][toDivide]]
+                    simEnv['nr_divitions'][toDivide] += 1
+                    nr_alive += nr_Divide
+
+                    ## Mutate
+                    toMutate = np.random.random(nr_Divide) < PROB_MUTATION
+                    if any(toMutate):
+                        mutateORF = np.random.random([sum(toMutate),1]) * (data1_Cum[-1]) # pick mutation
+                        idxORF = np.searchsorted(data1_Cum, mutateORF, side='right') # peek mutation
+                        mutation[toBirth[toMutate]] = idxORF  # store mutation
+                        #divided = np.nonzero(toDivide)[0]
+                        #nr_mutations +=
+                        simEnv['cell_cycle_time'][toBirth[toMutate]] = simEnv['cell_cycle_time'][divided[toMutate]] + \
+                                                                       data4[idxORF,iEnv].T*(CELL_CYCLE_TIMES[simEnv['founder_id'][divided[toMutate]]])
+                        simEnv['next_divition'][toBirth[toMutate]] = t + simEnv['cell_cycle_time'][toBirth[toMutate]]
+
+                ## Population ages
                 simEnv['age'][0:nr_alive] += 0.1
                 print 'alive: ', nr_alive
-                #print 'nDivide', nr_Divide
-                nr_alive += nr_Divide #Something is weird
-                # \todo: check cycle exit condition. stillInCycle = 0
+
+                # Check cycle exit condition
+                if nr_alive >= MAXIMUM_NR_AGENTS
+                    stillInCycle = 0
+                    
 
             # \todo: Sample for next cycle
             # \todo: save importants
