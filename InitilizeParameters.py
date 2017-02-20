@@ -19,7 +19,7 @@ NR_CYCLES = 1#50
 FOUNDER_COUNT = 10**5 # Nr. initial agents.
 SAMPLE_COUNT = 10**5 # Nr. sampled agents for each cycle
 YIELD = 5 # Nr. population doublings.
-MAXIMUM_NR_AGENTS = FOUNDER_COUNT*2**YIELD # per cycle
+MAXIMUM_NR_AGENTS = FOUNDER_COUNT*2**YIELD + 10 # per cycle,
 MEAN_LAG_TIME = 90 # [min]
 MEAN_CELL_CYCLE_TIME = 90 # [min]
 GENOME_LENGTH = 5 # Nr. of possible mutations. max: 9, otherwise change uint8 @ CreateInd...
@@ -42,10 +42,13 @@ lag_time[0:FOUNDER_COUNT] = LAG_TIMES
 cell_cycle_time = np.zeros([MAXIMUM_NR_AGENTS],dtype = DTYPE1)
 cell_cycle_time[0:FOUNDER_COUNT] = CELL_CYCLE_TIMES
 
-mutation = np.zeros([MAXIMUM_NR_AGENTS],dtype = DTYPE2)
+mutation = np.zeros([MAXIMUM_NR_AGENTS],dtype = 'uint16')
 
 founder_id = np.zeros([MAXIMUM_NR_AGENTS],dtype = "uint32")
 founder_id[0:FOUNDER_COUNT] = FOUNDER_ID
 
 age = np.zeros([MAXIMUM_NR_AGENTS],dtype = DTYPE1) # unsure Dtype
 age[0:FOUNDER_COUNT] = 1 # Born
+
+nr_divitions = np.zeros([MAXIMUM_NR_AGENTS],dtype = DTYPE1)
+
