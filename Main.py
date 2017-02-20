@@ -42,7 +42,6 @@ def run():
                     simEnv['next_divition'][toBirth] = simEnv['next_divition'][toDivide]
                     #CELL_CYCLE_TIMES[simEnv['founder_id'][toDivide]]
                     simEnv['nr_divitions'][toDivide] += 1
-                    nr_alive += nr_Divide
 
                     ## Mutate
                     toMutate = np.random.random(nr_Divide) < PROB_MUTATION
@@ -58,6 +57,7 @@ def run():
 
                 ## Population ages
                 simEnv['age'][0:nr_alive] += 0.1
+                nr_alive += nr_Divide
                 print 'alive: ', nr_alive
 
                 # Check cycle exit condition
