@@ -11,4 +11,4 @@ data3 = np.loadtxt("ORF_Length") # dtype 'f64'
 
 # effects sizes
 
-data4 = np.loadtxt("mmGT.dat")
+gen_time = np.loadtxt("mmGT.dat")
