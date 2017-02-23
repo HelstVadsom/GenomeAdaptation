@@ -29,14 +29,19 @@ def run():
         still_in_cycle = 1 # 1
         while still_in_cycle:
 
-            t += MINIMUM_TIME_RESOLUTION # Possible speed up? find biggest time increment...
-
             # Check lag
             if lag:
+                time_step = MINIMUM_TIME_RESOLUTION
                 lagging = (sim_env['lag_time'][:nr_alive] > 0)
                 lag = any(lagging)
-                sim_env['lag_time'][lagging] -= MINIMUM_TIME_RESOLUTION
-                sim_env['next_divition'][lagging] += MINIMUM_TIME_RESOLUTION
+                sim_env['lag_time'][lagging] -= time_step
+                sim_env['next_divition'][lagging] += time_step
+            else:
+                if time_step != MINIMUM_TIME_RESOLUTION or np.random.random() < A_MYSTICAL_SPEED_UP_PARAMETER:
+                        soonest_division = np.min([sim_env['next_divition'][:nr_alive]])
+                        time_step = np.max([MINIMUM_TIME_RESOLUTION, soonest_division - t]) # find biggest time increment
+
+            t += time_step
 
             ## Divide
             to_divide = (sim_env['next_divition'][:nr_alive] <= t)
@@ -44,6 +49,16 @@ def run():
             if nr_divide:
                 divide_index = np.nonzero(to_divide)[0]
                 to_birth = np.arange(nr_alive,(nr_alive + nr_divide))
+
+                if nr_alive + len(to_birth) > MAXIMUM_NR_AGENTS:
+                    nr_divide_reduced = MAXIMUM_NR_AGENTS - nr_alive
+                    to_birth = to_birth[nr_divide_reduced]
+                    divide_index = divide_index[np.random.choice(nr_divide, nr_divide_reduced, replace=False)]
+                    to_divide = divide_index
+                    nr_divide = nr_divide_reduced
+                    still_in_cycle = 0
+                    print 'About to exit cycle'
+
                 sim_env['founder_id'][to_birth] = divide_index
                 sim_env['lag_time'][to_birth] = sim_env['lag_time'][to_divide]
                 sim_env['cell_cycle_time'][to_birth] = sim_env['cell_cycle_time'][to_divide]
