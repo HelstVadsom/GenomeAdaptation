@@ -11,6 +11,7 @@ MUTATION_RATE = 0.33*10**-9 # per base, per division.
 GENOME_SIZE = 1.3*10**7 # nr. of bases
 ORF_SIZE = sum(data3)
 PROB_MUTATION = MUTATION_RATE * ORF_SIZE
+A_MYSTICAL_SPEED_UP_PARAMETER = 0.4
 
 ## CONSTANT:
 # scalars
@@ -35,6 +36,7 @@ nr_alive = FOUNDER_COUNT
 lag = 1
 growth = np.zeros([50,50])
 meanGT = np.zeros(50)
+gt_cycle = np.zeros([MAXIMUM_NR_AGENTS,NR_CYCLES])
 #to_divide = np.zeros(MAXIMUM_NR_AGENTS,dtype = 'bool_')
 #to_birth = np.zeros(MAXIMUM_NR_AGENTS,dtype = 'uint32')
 # vectors
