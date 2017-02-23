@@ -32,9 +32,13 @@ FOUNDER_ID = range(FOUNDER_COUNT) #np.array(range(FOUNDER_COUNT)).T # max: 4,294
 ## CHANGEABLE:
 # scalars
 nr_alive = FOUNDER_COUNT
-
+lag = 1
+growth = np.zeros([50,50])
+meanGT = np.zeros(50)
+#to_divide = np.zeros(MAXIMUM_NR_AGENTS,dtype = 'bool_')
+#to_birth = np.zeros(MAXIMUM_NR_AGENTS,dtype = 'uint32')
 # vectors
-lag_progress = np.zeros([MAXIMUM_NR_AGENTS],dtype = DTYPE1)
+lag_escape = np.zeros([MAXIMUM_NR_AGENTS],dtype = DTYPE1)
 
 lag_time = np.zeros([MAXIMUM_NR_AGENTS],dtype = DTYPE1)
 lag_time[0:FOUNDER_COUNT] = LAG_TIMES
@@ -48,7 +52,9 @@ founder_id = np.zeros([MAXIMUM_NR_AGENTS],dtype = "uint32")
 founder_id[0:FOUNDER_COUNT] = FOUNDER_ID
 
 age = np.zeros([MAXIMUM_NR_AGENTS],dtype = DTYPE1) # unsure Dtype
-age[0:FOUNDER_COUNT] = 1 # Born
 
 nr_divitions = np.zeros([MAXIMUM_NR_AGENTS],dtype = DTYPE1)
 
+divition_time = np.zeros([MAXIMUM_NR_AGENTS],dtype = DTYPE1)
+
+mutation = np.zeros([MAXIMUM_NR_AGENTS],dtype = DTYPE1)
