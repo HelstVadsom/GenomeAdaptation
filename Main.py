@@ -11,22 +11,27 @@ from CreateIndividuals import sim_env
 # \todo: HERE, Delete variables we don't need anymore.
 # data1 = data2 = None # delete unneccesary variables.
 
+lag_time = \
+lag_escape = \
+cell_cycle_time = \
+founder_id = \
+age = \
+nr_divitions = \
+divition_time = \
+mutation = None
 
 def run():
     t = 0
     nr_alive = FOUNDER_COUNT
-    # nr_mutations = 0
-    #for i_env in xrange(NR_ENVIRONMENTS):
     for i_cycle in xrange(NR_CYCLES):
         print 'i_env = ', i_env, 'i_cycle = ', i_cycle
         lag = 1
         still_in_cycle = 1 # 1
         while still_in_cycle:
-            # print 'time is ', t
-            # print 'alive: ', nr_alive
 
             t += MINIMUM_TIME_RESOLUTION # Possible speed up? find biggest time increment...
-            # Check exit lag, (and if no cells in lag, turn off check)
+            
+            # Check lag
             if lag:
                 lagging = (sim_env['lag_time'][:nr_alive] > 0) #.dot(sim_env['age'][0:nr_alive] >= 1)
                 lag = any(lagging)
@@ -65,7 +70,7 @@ def run():
                     sim_env['next_divition'][to_birth[to_mutate]] = t + sim_env['cell_cycle_time'][to_birth[to_mutate]]
 
             ## Population ages
-            sim_env['age'][0:nr_alive] += 0.1 # worry, might take up alotta time.
+            sim_env['age'][:nr_alive] += 0.1 # worry, might take up alotta time.
             nr_alive += nr_divide
             # print 'alive: ', nr_alive
 
@@ -76,7 +81,7 @@ def run():
 
             # Save data for Growth curve
             if t % 20 == 0:
-                growth[t/20,i_cycle] = nr_alive
+                growth[t/20, i_cycle] = nr_alive
 
             # \todo: Save data for Evolutionary tree, Look plot code online. Binary tree!
                 # mutations and mothers for all mutated cells
@@ -100,6 +105,14 @@ def run():
 
     # \todo: generate plots,
     # \todo: make the code faster.
+
+
+
+def getGT(i,fc): # calculates the effective GT of agent i, fc should be FOUNDER_COUNT or SAMPLE_COUNT
+    if sim_env['founder_id'][i] < fc:
+        return gen_time[sim_env['mutation'][i], i_env]
+    else:
+        return getGT(sim_env['founder_id'][i],fc) +  gen_time[sim_env['mutation'][i], i_env]
 
 
 if __name__ == "__main__":
