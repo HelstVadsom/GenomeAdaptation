@@ -11,30 +11,30 @@ MUTATION_RATE = 0.33*10**-9 # per base, per division.
 GENOME_SIZE = 1.3*10**7 # nr. of bases
 ORF_SIZE = sum(data3)
 PROB_MUTATION = MUTATION_RATE * ORF_SIZE
-A_MYSTICAL_SPEED_UP_PARAMETER = 0.4
+A_MYSTICAL_SPEED_UP_PARAMETER = 0.4 # Parameter value was set after trying a a few numbers.
 
 ## CONSTANT:
 # scalars
 NR_ENVIRONMENTS = 1#8
-NR_CYCLES = 1#50
+NR_CYCLES = 3#50
 FOUNDER_COUNT = 10**5 # Nr. initial agents.
 SAMPLE_COUNT = 10**5 # Nr. sampled agents for each cycle
 YIELD = 5 # Nr. population doublings.
-MAXIMUM_NR_AGENTS = FOUNDER_COUNT*2**YIELD + 10 # per cycle,
+MAXIMUM_NR_AGENTS = FOUNDER_COUNT*2**YIELD # per cycle,
 MEAN_LAG_TIME = 90 # [min]
 MEAN_CELL_CYCLE_TIME = 90 # [min]
-GENOME_LENGTH = 5 # Nr. of possible mutations. max: 9, otherwise change uint8 @ CreateInd...
+#GENOME_LENGTH = 5 # Nr. of possible mutations. max: 9, otherwise change uint8 @ CreateInd...
+MEASUREMENTS_AT_EVERY = 20 # [min], put = 0 for measurements at ALL relevant time-steps.
 
 # vectors
 LAG_TIMES = MEAN_LAG_TIME + np.random.normal(0, 1, [FOUNDER_COUNT])
 CELL_CYCLE_TIMES = MEAN_CELL_CYCLE_TIME + np.random.normal(0, 1, [FOUNDER_COUNT])
-FOUNDER_ID = range(FOUNDER_COUNT) #np.array(range(FOUNDER_COUNT)).T # max: 4,294,967,295
+FOUNDER_ID = range(FOUNDER_COUNT) # max: 4,294,967,295
 
 ## CHANGEABLE:
 # scalars
 nr_alive = FOUNDER_COUNT
 lag = 1
-growth = np.zeros([50,50])
 meanGT = np.zeros(50)
 gt_cycle = np.zeros([MAXIMUM_NR_AGENTS,NR_CYCLES])
 #to_divide = np.zeros(MAXIMUM_NR_AGENTS,dtype = 'bool_')
