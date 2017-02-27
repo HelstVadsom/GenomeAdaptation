@@ -12,17 +12,20 @@ from CreateIndividuals import sim_env
 # data1 = data2 = None # delete unneccesary variables.
 
 lag_time = \
-lag_escape = \
-cell_cycle_time = \
-founder_id = \
-age = \
-nr_divitions = \
-divition_time = \
-mutation = None
+    lag_escape = \
+    cell_cycle_time = \
+    founder_id = \
+    age = \
+    nr_divitions = \
+    divition_time = \
+    mutation = None
 
 def run():
     t = 0
     nr_alive = FOUNDER_COUNT
+    growth = nr_alive
+    growth_time = 0
+    cycle_time = 0
     for i_cycle in xrange(NR_CYCLES):
         print 'i_env = ', i_env, 'i_cycle = ', i_cycle
         lag = 1
@@ -36,10 +39,18 @@ def run():
                 lag = any(lagging)
                 sim_env['lag_time'][lagging] -= time_step
                 sim_env['next_divition'][lagging] += time_step
-            else:
+            else: # set another time_step
                 if time_step != MINIMUM_TIME_RESOLUTION or np.random.random() < A_MYSTICAL_SPEED_UP_PARAMETER:
                         soonest_division = np.min([sim_env['next_divition'][:nr_alive]])
                         time_step = np.max([MINIMUM_TIME_RESOLUTION, soonest_division - t]) # find biggest time increment
+
+            if MEASUREMENTS_AT_EVERY:
+                do_measurements = np.floor((t + time_step) / MEASUREMENTS_AT_EVERY) - np.floor(t / MEASUREMENTS_AT_EVERY)
+                if do_measurements: # Saves data for Growth curve
+                    growth = np.append(growth, np.tile(nr_alive,do_measurements))
+            else:
+                growth = np.append(growth, nr_alive)
+                growth_time = np.append(growth_time, t)
 
             t += time_step
 
@@ -50,13 +61,13 @@ def run():
                 divide_index = np.nonzero(to_divide)[0]
                 to_birth = np.arange(nr_alive,(nr_alive + nr_divide))
 
-                if nr_alive + len(to_birth) > MAXIMUM_NR_AGENTS:
+                if nr_alive + len(to_birth) >= MAXIMUM_NR_AGENTS: # If this is the last iteration before a new cycle.
                     nr_divide_reduced = MAXIMUM_NR_AGENTS - nr_alive
-                    to_birth = to_birth[nr_divide_reduced]
+                    to_birth = np.arange(nr_alive, (nr_alive + nr_divide_reduced))
                     divide_index = divide_index[np.random.choice(nr_divide, nr_divide_reduced, replace=False)]
                     to_divide = divide_index
                     nr_divide = nr_divide_reduced
-                    still_in_cycle = 0
+                    still_in_cycle = 0 # Exits while loop.
                     print 'About to exit cycle'
 
                 sim_env['founder_id'][to_birth] = divide_index
@@ -75,25 +86,19 @@ def run():
                     # divide_index = np.nonzero(to_divide)[0]
                     print 'time is ', t
                     print 'alive: ', nr_alive
-                    print gen_time[orf_index, i_env]
+                    print 'GT mutaion(s): ', gen_time[orf_index, i_env]
                     sim_env['cell_cycle_time'][to_birth[to_mutate]] = \
                         sim_env['cell_cycle_time'][divide_index[to_mutate]] + gen_time[orf_index, i_env] * MEAN_CELL_CYCLE_TIME
                     sim_env['next_divition'][to_birth[to_mutate]] = t + sim_env['cell_cycle_time'][to_birth[to_mutate]]
 
             ## Population ages
-            sim_env['age'][:nr_alive] += 0.1 # worry, might take up alotta time.
+            sim_env['age'][:nr_alive] += 0.1
             nr_alive += nr_divide
-            # print 'alive: ', nr_alive
 
             # Check cycle exit condition
-
-            if nr_alive >= MAXIMUM_NR_AGENTS - 10:
-                still_in_cycle = 0
-                print 'Exiting cycle: ', i_cycle
-
-            # Save data for Growth curve
-            if t % 20 == 0:
-                growth[t/20, i_cycle] = nr_alive
+            #if nr_alive >= MAXIMUM_NR_AGENTS: # superfluos? Seems so! Most likely so! OF COURSE!
+            #    still_in_cycle = 0
+            #    print 'Exiting cycle: ', i_cycle
 
             # \todo: Save data for Evolutionary tree, Look plot code online. Binary tree!
                 # mutations and mothers for all mutated cells
@@ -104,22 +109,49 @@ def run():
         gt_cycle[:MAXIMUM_NR_AGENTS, i_cycle] = (sim_env['cell_cycle_time'] - MEAN_CELL_CYCLE_TIME) / MEAN_CELL_CYCLE_TIME
 
         # Save meanGT
-        meanGT[i_cycle] = np.mean(sim_env['cell_cycle_time'][:MAXIMUM_NR_AGENTS])
+        meanGT[i_cycle] = np.mean(gt_cycle[:,i_cycle]) #np.mean(sim_env['cell_cycle_time'][:MAXIMUM_NR_AGENTS])
+
+        cycle_time = np.append(cycle_time, t) # stores cycle exit time
 
         # Sample for next cycle
         sample = np.random.choice(MAXIMUM_NR_AGENTS, SAMPLE_COUNT,replace=False)
         sim_env[:SAMPLE_COUNT] = sim_env[sample]
         nr_alive = SAMPLE_COUNT
 
-        # \todo: save importants
-    # \todo: save importants
 
     # \todo: generate plots,
-    # \todo: make the code faster.
+    import matplotlib.pyplot as plt
+    plt.figure(1, figsize=(2.75, 2.0))
 
+    if MEASUREMENTS_AT_EVERY:
+        plt.plot(np.linspace(0, len(growth)*MEASUREMENTS_AT_EVERY, len(growth)), growth, '-')
+    else:
+        plt.plot(growth_time, growth, '-')
 
+    plt.savefig('plt_ex1.pdf')
+
+    plt.figure(2, figsize=(2.75, 2.0))
+    plt.plot(meanGT)
+    plt.savefig('plt_ex2.pdf')
+
+    plt.show()
+
+#def plot():
 
 
 if __name__ == "__main__":
     i_env = 0
+
+    # 'Arsenite'   (i_env = 0)
+    # 'Citric_Acid'(i_env = 1)
+    # 'Citrulline' (i_env = 2)
+    # 'Glycine'    (i_env = 3)
+    # 'Isoleucine' (i_env = 4)
+    # 'Paraquat'   (i_env = 5)
+    # 'Rapamycin'  (i_env = 6)
+    # 'SC'         (i_env = 7)
+    # 'Tryptophan' (i_env = 8)
+
+    #[growth, meanGT] = run()
     run()
+    #plot()
