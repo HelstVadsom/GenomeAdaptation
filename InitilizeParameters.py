@@ -16,7 +16,7 @@ A_MYSTICAL_SPEED_UP_PARAMETER = 0.4 # Parameter value was set after trying a a f
 ## CONSTANT:
 # scalars
 NR_ENVIRONMENTS = 1#8
-NR_CYCLES = 3#50
+NR_CYCLES = 50
 FOUNDER_COUNT = 10**5 # Nr. initial agents.
 SAMPLE_COUNT = 10**5 # Nr. sampled agents for each cycle
 YIELD = 5 # Nr. population doublings.
@@ -55,8 +55,8 @@ founder_id[0:FOUNDER_COUNT] = FOUNDER_ID
 
 age = np.zeros([MAXIMUM_NR_AGENTS],dtype = DTYPE1) # unsure Dtype
 
-nr_divitions = np.zeros([MAXIMUM_NR_AGENTS],dtype = DTYPE1)
+nr_divisions = np.zeros([MAXIMUM_NR_AGENTS],dtype = DTYPE1)
 
-divition_time = np.zeros([MAXIMUM_NR_AGENTS],dtype = DTYPE1)
+division_time = np.zeros([MAXIMUM_NR_AGENTS],dtype = DTYPE1)
 
-mutation = np.zeros([MAXIMUM_NR_AGENTS],dtype = DTYPE1)
+mutation = np.zeros([MAXIMUM_NR_AGENTS,10], dtype = 'uint16') # dtype =
