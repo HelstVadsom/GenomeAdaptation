@@ -96,25 +96,23 @@ def run():
                     mutate_orf = np.random.random([sum(to_mutate), 1]) * (data1_Cum[-1]) # pick mutation
                     orf_index = np.searchsorted(data1_Cum, mutate_orf, side='right') # peek mutation
                     #print 'orf_infdex ', orf_index
-
+                    #print orf_index
+                    #print mutation
                     # check that they don't mutate the same orf twice.
-                    overlap = mutation[[to_birth[to_mutate]], :] == orf_index
+                    overlap = (mutation[[to_birth[to_mutate]], :] == orf_index)[0]
+                    # Warning: Above line, Not the same in ipython as pycharm
+                    # (in ipython this line is to be runned without the [0])
+                    #print overlap
                     if np.any(overlap):
-
-                        print mutation[[to_birth[to_mutate]], :] #three
-                        print 'Entered mutational overlap'
-                        print orf_index
-                        print 'np.nonzero(overlap) ', np.nonzero(overlap)
-                        columns = np.nonzero(overlap)[1]
-                        print columns
-
+                        print 'Found mutational overlap'
+                        columns = np.nonzero(overlap)[0]#[1][0]
                         orf_index = np.delete(orf_index, columns)
-                        print to_mutate[columns]
-                        to_mutate[columns] = False
-
+                        compact_to_mutate = np.nonzero(to_mutate)[0]
+                        to_mutate[compact_to_mutate[columns]] = False
+                        print 'Deleted mutational overlap'
 
                     first_zeros = np.argmin(mutation[to_birth[to_mutate]],1)
-                    mutation[[to_birth[to_mutate]],first_zeros] = orf_index.T  # store mutation
+                    mutation[to_birth[to_mutate],first_zeros] = orf_index.T[0]  # store mutation
                     #print mutation[to_birth[to_mutate],:]
 
                     sim_env['cell_cycle_time'][to_birth[to_mutate]] = \
@@ -170,8 +168,10 @@ def run():
     count_mutations = np.zeros(len(different_mutations))
     for mut in enumerate(different_mutations):
             count_mutations[mut[0]] = np.count_nonzero(mutation == mut[1])
+    sorted_count_index = np.argsort(count_mutations)
 
-
+    different_mutations = different_mutations[sorted_count_index]
+    count_mutations = count_mutations[sorted_count_index]
     different_mutations_ORF_names = data2[different_mutations]
     print different_mutations_ORF_names
     print different_mutations
@@ -192,13 +192,13 @@ def run():
     plt.plot(meanGT)
     plt.savefig('plt_ex2.pdf')
 
-    plt.figure(3, figsize=(2.75, 2.0))
-    plt.xticks(different_mutations, different_mutations_ORF_names)
-    plt.hist(mutation[mutation >= 0])
+    #plt.figure(3, figsize=(2.75, 2.0))
+    #plt.xticks(different_mutations[-1:-10], different_mutations_ORF_names[-1:-10])
+    #plt.hist(mutation[mutation >= 0])
 
     plt.figure(4, figsize=(2.75, 2.0))
-    plt.xticks(different_mutations, different_mutations_ORF_names)
-    plt.bar(different_mutations,count_mutations)
+    plt.xticks(range(10)+.5, different_mutations_ORF_names[-10:],rotation='vertical')
+    plt.bar(range(10),count_mutations[-10:])
 
     plt.show()
 
