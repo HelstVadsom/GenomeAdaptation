@@ -197,8 +197,12 @@ def run():
     #plt.hist(mutation[mutation >= 0])
 
     plt.figure(4, figsize=(2.75, 2.0))
-    plt.xticks(range(10)+.5, different_mutations_ORF_names[-10:],rotation='vertical')
-    plt.bar(range(10),count_mutations[-10:])
+    plt.xticks(range(10), different_mutations_ORF_names[-10:],rotation='vertical')
+    plt.bar(np.arange(10)+0.5,count_mutations[-10:])
+    plt.xlabel("FOO")
+    plt.ylabel("FOO")
+    plt.title("Testing")
+    plt.yscale('log')
 
     plt.show()
 
