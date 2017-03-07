@@ -22,7 +22,10 @@ def save_growth(growth, growth_time, nr_alive, t): # Save data for growth curve.
     return growth, growth_time
 
 
-def save_importants(c, i_cycle, growth, growth_time, meanGT, gt_cycle, cycle_time, nr_alive, t):
+def save_importants(c, i_cycle, growth, growth_time, meanGT, gt_cycle, cycle_time, nr_alive, t, nr_haploid_types):
+
+    nr_haploid_types[i_cycle] = calc_nr_haplotypes(c, mutation)
+
     # Save data for histograms of GT
     gt_cycle[:c.MAXIMUM_NR_AGENTS, i_cycle] = (sim_env['cell_cycle_time'] - c.MEAN_CELL_CYCLE_TIME) / c.MEAN_CELL_CYCLE_TIME
 
@@ -34,7 +37,7 @@ def save_importants(c, i_cycle, growth, growth_time, meanGT, gt_cycle, cycle_tim
     # Save data for growth curve (one last time).
     growth, growth_time = save_growth(growth, growth_time, nr_alive, t)
 
-    return growth, growth_time, meanGT, gt_cycle, cycle_time
+    return growth, growth_time, meanGT, gt_cycle, cycle_time, nr_haploid_types
 
 
 def divide(c, d, mutation, sim_env, nr_alive, t, still_in_cycle):
@@ -112,7 +115,8 @@ def sample_and_reset(c, mutation, sim_env):
 
 
 def process_data_and_plot(c, d, mutation, growth, growth_time, meanGT):
-    # calculate nr of haploid types
+    nr_haploid_types = calc_nr_haplotypes(c, mutation)
+
     different_mutations = np.unique(mutation[mutation >= 0])
     count_mutations = np.zeros(len(different_mutations))
     for mut in enumerate(different_mutations):
@@ -128,6 +132,18 @@ def process_data_and_plot(c, d, mutation, growth, growth_time, meanGT):
     print [different_mutations, i_env]
     print count_mutations * d.gen_time[different_mutations, i_env] / c.MAXIMUM_NR_AGENTS
     plot_importants(different_mutations_ORF_names, count_mutations, growth, growth_time, meanGT)
+
+
+def calc_nr_haplotypes(c, mutation):
+    m = mutation
+    haplo_types = np.zeros(c.MAXIMUM_NR_AGENTS)
+    for i in xrange(c.MAXIMUM_NR_AGENTS):
+        haplo_types[i] = hash(
+            (m[i, 0], m[i, 1], m[i, 2], m[i, 3], m[i, 4], m[i, 5], m[i, 6], m[i, 7], m[i, 8], m[i, 9]))
+
+    nr_haplotypes = len(np.unique(haplo_types))
+
+    return nr_haplotypes
 
 
 def plot_importants(different_mutations_ORF_names, count_mutations, growth, growth_time, meanGT):
@@ -159,6 +175,7 @@ def run(c, d, mutation, sim_env, i_env, time_step):
     growth = c.FOUNDER_COUNT
     growth_time = 0
     meanGT = np.zeros(c.NR_CYCLES)
+    nr_haploid_types = np.zeros(c.NR_CYCLES)
     gt_cycle = np.zeros([c.MAXIMUM_NR_AGENTS,c.NR_CYCLES])
     cycle_time = 0
 
@@ -178,8 +195,8 @@ def run(c, d, mutation, sim_env, i_env, time_step):
             # \todo: Save data to determine nr of haplotypes.
 
         # Do After a cycle
-        growth, growth_time, meanGT, gt_cycle, cycle_time = save_importants(c, i_cycle, growth, growth_time, meanGT, \
-                                                                           gt_cycle, cycle_time, nr_alive, t)
+        growth, growth_time, meanGT, gt_cycle, cycle_time, nr_haploid_types \
+            = save_importants(c, i_cycle, growth, growth_time, meanGT, gt_cycle, cycle_time, nr_alive, t, nr_haploid_types)
         if not i_cycle == c.NR_CYCLES - 1:
             sim_env, mutation, nr_alive = sample_and_reset(c, mutation, sim_env)
 
@@ -203,17 +220,8 @@ if __name__ == "__main__": # \todo Create functions
     c = Constants(NR_CYCLES, FOUNDER_COUNT, SAMPLE_COUNT, YIELD, MAXIMUM_NR_AGENTS, MEAN_LAG_TIME, MEAN_CELL_CYCLE_TIME,
                   EXPERIMENT_TIME, PROB_MUTATION, LAG_TIMES, CELL_CYCLE_TIMES, FOUNDER_ID)
 
-    #Parameters = collections.namedtuple('Parameters', ['i_env', 'time_step', 't', 'nr_alive', 'lag', 'laggin',
-    #                                                   'i_cycle', 'still_in_cycle'], verbose=True)
-    #p = Parameters(0,20,0,c.FOUNDER_COUNT,1,0,0,1)
-
     i_env = 0
     time_step = 20
-
-    #Saveables = collections.namedtuple('Saveables', ['growth', 'growth_time', 'meanGT', 'gt_cycle', 'cycle_time'],
-    #                                   verbose=True)
-    #s = Saveables(c.FOUNDER_COUNT, 0, np.zeros(c.NR_CYCLES), np.zeros([c.MAXIMUM_NR_AGENTS,c.NR_CYCLES]), 0)
-
 
     run(c, d, mutation, sim_env, i_env, time_step)
     # \todo: Clean up the code! it's messy!
