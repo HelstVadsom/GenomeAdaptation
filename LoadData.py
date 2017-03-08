@@ -1,14 +1,14 @@
 import numpy as np
 
 # mutational probability
-data1 = np.loadtxt("nrLOFMut.txt") # dtype 'f64'
+nr_LOFM = np.loadtxt("nrLOFMut.txt") # dtype 'f64' # per ORF
 
-data1_Cum = np.cumsum(data1)
+nr_LOFM_cumsum = np.cumsum(nr_LOFM)
 
-data2 = np.loadtxt("LOF_ORFs.dat",dtype = 'S9')
+data3 = np.loadtxt("ORF_Length") # dtype 'f64' % isn't needed?
 
-data3 = np.loadtxt("ORF_Length") # dtype 'f64'
+# ORF names
+orfs = np.loadtxt("LOF_ORFs.dat",dtype = 'S9')
 
 # effects sizes
-
-gen_time = np.loadtxt("mmGT.dat")
+gen_time = np.loadtxt("mmGT.dat") # change in GT for each LOF mutation for each environment.
