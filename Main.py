@@ -22,7 +22,7 @@ def save_growth(growth, growth_time, nr_alive, t): # Save data for growth curve.
     return growth, growth_time
 
 
-def save_importants(c, i_cycle, growth, growth_time, meanGT, gt_cycle, cycle_time, nr_alive, t, nr_haploid_types):
+def save_importants(c, i_cycle, growth, growth_time, meanGT, gt_cycle, cycle_time, nr_alive, t, nr_haploid_types, mutation):
 
     nr_haploid_types[i_cycle] = calc_nr_haplotypes(c, mutation)
 
@@ -90,7 +90,7 @@ def mutate(c, d, mutation, sim_env, nr_divide, to_birth, divide_index):
 
         first_zeros = np.argmin(mutation[to_birth[to_mutate]], 1)
         mutation[to_birth[to_mutate], first_zeros] = orf_index.T[0]  # store mutation
-        # print mutation[to_birth[to_mutate],:]
+        #print mutation[to_birth[to_mutate],:]
 
         sim_env['cell_cycle_time'][to_birth[to_mutate]] = \
             sim_env['cell_cycle_time'][divide_index[to_mutate]] + \
@@ -114,8 +114,9 @@ def sample_and_reset(c, mutation, sim_env):
     return sim_env, mutation, nr_alive
 
 
-def process_data_and_plot(c, d, mutation, growth, growth_time, meanGT):
-    nr_haploid_types = calc_nr_haplotypes(c, mutation)
+def process_data_and_plot(c, d, mutation, growth, growth_time, meanGT, nr_haploid_types):
+    growth_index = np.where(growth == c.MAXIMUM_NR_AGENTS)[0] + 1
+    growth_index = np.insert(growth_index,0,0)
 
     different_mutations = np.unique(mutation[mutation >= 0])
     count_mutations = np.zeros(len(different_mutations))
@@ -131,42 +132,58 @@ def process_data_and_plot(c, d, mutation, growth, growth_time, meanGT):
     print count_mutations
     print [different_mutations, i_env]
     print count_mutations * d.gen_time[different_mutations, i_env] / c.MAXIMUM_NR_AGENTS
-    plot_importants(different_mutations_ORF_names, count_mutations, growth, growth_time, meanGT)
+    plot_importants(different_mutations_ORF_names, count_mutations, growth, growth_time, growth_index, meanGT, nr_haploid_types)
 
 
 def calc_nr_haplotypes(c, mutation):
-    m = mutation
+    m = np.sort(mutation)
     haplo_types = np.zeros(c.MAXIMUM_NR_AGENTS)
     for i in xrange(c.MAXIMUM_NR_AGENTS):
         haplo_types[i] = hash(
             (m[i, 0], m[i, 1], m[i, 2], m[i, 3], m[i, 4], m[i, 5], m[i, 6], m[i, 7], m[i, 8], m[i, 9]))
 
     nr_haplotypes = len(np.unique(haplo_types))
-
+    print nr_haplotypes
     return nr_haplotypes
 
 
-def plot_importants(different_mutations_ORF_names, count_mutations, growth, growth_time, meanGT):
+def plot_importants(different_mutations_ORF_names, count_mutations, growth, growth_time, growth_index, meanGT, nr_haploid_types):
 
     import matplotlib.pyplot as plt
     plt.figure(1, figsize=(2.75, 2.0))
-
-    plt.plot(growth_time, growth, '-')
-
-    plt.savefig('plt_ex1.pdf')
+    for i in range(len(growth_index) - 1):
+        plt.plot(growth_time[growth_index[i]:growth_index[i+1]], growth[growth_index[i]:growth_index[i+1]], '-')
+    plt.xlabel("t [min]")
+    plt.ylabel("Population")
+    plt.title("Growth Curves")
+    #plt.savefig('p1.pdf')
 
     plt.figure(2, figsize=(2.75, 2.0))
     plt.plot(meanGT)
-    plt.savefig('plt_ex2.pdf')
+    plt.xlabel("Cycle")
+    plt.ylabel("Mean GT")
+    #plt.title("GT")
+    #plt.savefig('plt_ex2.pdf')
+
+    #import plotly.tools as tls
+    fig = plt.figure(3, figsize=(2.75, 2.0))
+    ax = fig.add_subplot(111)
+    if len(different_mutations_ORF_names) > 10:
+        plt.xticks(np.arange(10) + 0.4, different_mutations_ORF_names[-10:],rotation='vertical')
+        ax.bar(np.arange(10), count_mutations[-10:], log=True)
+    else:
+        plt.xticks(np.arange(5) + 0.4, different_mutations_ORF_names[-5:],rotation='vertical')
+        ax.bar(np.arange(5), count_mutations[-5:], log=True)
+    ax.set_xlabel("ORF Names")
+    ax.set_ylabel("Nr. of Copies")
+    ax.set_title("Top Mutations")
+    ax.set_yscale('log', nonposy="clip")
+
 
     plt.figure(4, figsize=(2.75, 2.0))
-    plt.xticks(np.arange(10) + 0.4, different_mutations_ORF_names[-10:],rotation='vertical')
-    plt.bar(np.arange(10), count_mutations[-10:], log=True)
-    plt.xlabel("FOO")
-    plt.ylabel("FOO")
-    plt.title("Testing")
-    plt.yscale('log')
-
+    plt.plot(nr_haploid_types)
+    plt.xlabel("Cycle")
+    plt.ylabel("Nr. of Haploid Types")
     plt.show()
 
 
@@ -196,12 +213,12 @@ def run(c, d, mutation, sim_env, i_env, time_step):
 
         # Do After a cycle
         growth, growth_time, meanGT, gt_cycle, cycle_time, nr_haploid_types \
-            = save_importants(c, i_cycle, growth, growth_time, meanGT, gt_cycle, cycle_time, nr_alive, t, nr_haploid_types)
-        if not i_cycle == c.NR_CYCLES - 1:
+            = save_importants(c, i_cycle, growth, growth_time, meanGT, gt_cycle, cycle_time, nr_alive, t, nr_haploid_types, mutation)
+        if i_cycle != c.NR_CYCLES - 1:
             sim_env, mutation, nr_alive = sample_and_reset(c, mutation, sim_env)
 
     # Do After All cycles
-    process_data_and_plot(c, d, mutation, growth, growth_time, meanGT)
+    process_data_and_plot(c, d, mutation, growth, growth_time, meanGT, nr_haploid_types)
 
 if __name__ == "__main__": # \todo Create functions
     import numpy as np
