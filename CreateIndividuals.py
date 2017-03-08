@@ -12,7 +12,7 @@ cell_cycle_time[0:FOUNDER_COUNT] = CELL_CYCLE_TIMES
 division_time                    = cell_cycle_time
 founder_id                       = np.zeros([MAXIMUM_NR_AGENTS],dtype = "uint32")
 founder_id[0:FOUNDER_COUNT]      = FOUNDER_ID
-age                              = np.zeros([MAXIMUM_NR_AGENTS],dtype = DTYPE1) # unsure Dtype
+age                              = np.zeros([MAXIMUM_NR_AGENTS],dtype = 'float32') # unsure Dtype
 nr_divisions                     = np.zeros([MAXIMUM_NR_AGENTS],dtype = DTYPE1)
 
 # pre-allocate
