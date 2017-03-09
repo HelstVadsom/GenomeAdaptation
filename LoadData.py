@@ -1,9 +1,9 @@
 import numpy as np
 
 # mutational probability
-nr_LOFM = np.loadtxt("nrLOFMut.txt") # dtype 'f64' # per ORF
+orf_target_size = np.loadtxt("nrLOFMut.txt") # dtype 'f64' # per ORF
 
-nr_LOFM_cumsum = np.cumsum(nr_LOFM)
+orf_target_size_cums = np.cumsum(orf_target_size)
 
 data3 = np.loadtxt("ORF_Length") # dtype 'f64' % isn't needed?
 
