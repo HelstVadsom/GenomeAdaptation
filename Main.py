@@ -8,6 +8,7 @@
 
 
 def set_up():
+    "Function to make variables inner"
     Data = nt('Data', ['orf_target_size_cums', 'gen_time', 'orfs'], verbose=True)
     d = Data(orf_target_size_cums, gen_time, orfs)
 
@@ -130,8 +131,7 @@ def process_data_and_plot(c, d, s, mutation, environment):
     s_new = dd(list)
     for k, v in s:
         s_new[k].append(v)
-
-    growth_index = np.where(s_new['growth'] == c.MAXIMUM_NR_AGENTS)[0] + 1
+    growth_index = np.where(np.array(s_new['growth'])== int(c.MAXIMUM_NR_AGENTS))[0] + 1
     growth_index = np.insert(growth_index, 0, 0)
 
     unique_mutations = np.unique(mutation[mutation >= 0])
@@ -143,10 +143,9 @@ def process_data_and_plot(c, d, s, mutation, environment):
     unique_mutations = unique_mutations[sorted_count_index]
     nr_unique_mutations = nr_unique_mutations[sorted_count_index]
     unique_mutated_orfs = orfs[unique_mutations]
-    print unique_mutated_orfs
-    print unique_mutations
-    print nr_unique_mutations
-    print [unique_mutations, environment]
+    print 'Existing ORF mutations: ', unique_mutated_orfs
+    print 'Corresponding counts: ', nr_unique_mutations
+    print 'Tot, GT Effect in pop.: '
     print nr_unique_mutations * d.gen_time[unique_mutations, environment] / c.MAXIMUM_NR_AGENTS
     plot_importants(unique_mutated_orfs, nr_unique_mutations, s_new, growth_index)
 
