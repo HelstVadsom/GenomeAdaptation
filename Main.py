@@ -14,9 +14,9 @@ def set_up():
 
     Constants = nt('Constants', ['NR_CYCLES', 'FOUNDER_COUNT', 'SAMPLE_COUNT', 'YIELD', 'MAXIMUM_NR_AGENTS', 'MEAN_LAG_TIME',
                                                      'MEAN_CELL_CYCLE_TIME', 'EXPERIMENT_TIME', 'MUTATION_PROB',
-                                                     'LAG_TIMES', 'CELL_CYCLE_TIMES', 'FOUNDER_ID'], verbose=True)
+                                                     'LAG_TIMES', 'CELL_CYCLE_TIMES', 'FOUNDER_ID', 'OVERLAP_ALLOWED'], verbose=True)
     c = Constants(NR_CYCLES, FOUNDER_COUNT, SAMPLE_COUNT, YIELD, MAXIMUM_NR_AGENTS, MEAN_LAG_TIME, MEAN_CELL_CYCLE_TIME,
-                  EXPERIMENT_TIME, MUTATION_PROB, LAG_TIMES, CELL_CYCLE_TIMES, FOUNDER_ID)
+                  EXPERIMENT_TIME, MUTATION_PROB, LAG_TIMES, CELL_CYCLE_TIMES, FOUNDER_ID, OVERLAP_ALLOWED)
 
     time_step = 20  # [min]
     nr_alive = int(c.FOUNDER_COUNT)
@@ -36,21 +36,6 @@ def lag_f(c, sim_env, i_cycle, lag, is_lagging, t, time_step):
         lag_escapists = np.bool_(was_lagging * (1 - is_lagging))
         sim_env['next_division_time'][lag_escapists] -= t - sim_env['lag_time'][lag_escapists]
     return lag, is_lagging, sim_env
-
-
-def save_growth(s, nr_alive, t):
-    s.append(('growth', nr_alive))
-    s.append(('growth_time', t))
-    return s
-
-
-def save_importants(c, s, i_cycle, distribution_gt, nr_alive, t, mutation, sim_env):
-    s.append(('nr_haploid_types', calc_nr_haplotypes(c, mutation)))
-    distribution_gt[:c.MAXIMUM_NR_AGENTS, i_cycle] = (sim_env['cell_cycle_time'] - c.MEAN_CELL_CYCLE_TIME) / c.MEAN_CELL_CYCLE_TIME
-    s.append(('mean_gt', np.mean(distribution_gt[:, i_cycle])))
-
-    s = save_growth(s, nr_alive, t)
-    return s, distribution_gt
 
 
 def divide(c, d, mutation, sim_env, nr_alive, t, still_in_cycle, environment):
@@ -89,17 +74,18 @@ def mutate(c, d, mutation, sim_env, nr_divide, to_birth, to_divide_nz, environme
     if any(to_mutate):
         mutation_cite = np.random.random([sum(to_mutate), 1]) * (d.orf_target_size_cums[-1])  # pick mutation
         orf_mutation = np.searchsorted(d.orf_target_size_cums, mutation_cite, side='right')  # peek mutation
-        
-        overlap = (mutation[[to_birth[to_mutate]], :] == orf_mutation)[0]  # forbids > 1 mutation per orf for each agent.
-        # Warning: Above line, Not the same in ipython as pycharm
-        # (in ipython this line is to be exec. without the [0]).
-        if np.any(overlap):
-            print 'Found mutational overlap'
-            overlapping_columns = np.nonzero(overlap)[0]
-            orf_mutation = np.delete(orf_mutation, overlapping_columns)  # disposes agents ORF mutation.
-            orf_mutation_nz = np.nonzero(to_mutate)[0]
-            to_mutate[orf_mutation_nz[overlapping_columns]] = False  # prevents agents ORF to mutate.
-            print 'Deleted mutational overlap'
+
+        if ~c.OVERLAP_ALLOWED:
+            overlap = (mutation[[to_birth[to_mutate]], :] == orf_mutation)[0]  # forbids > 1 mutation per orf for each agent.
+            # Warning: Above line, Not the same in ipython as pycharm
+            # (in ipython this line is to be exec. without the [0]).
+            if np.any(overlap):
+                print 'Found mutational overlap'
+                overlapping_columns = np.nonzero(overlap)[0]
+                orf_mutation = np.delete(orf_mutation, overlapping_columns)  # disposes agents ORF mutation.
+                orf_mutation_nz = np.nonzero(to_mutate)[0]
+                to_mutate[orf_mutation_nz[overlapping_columns]] = False  # prevents agents ORF to mutate.
+                print 'Deleted mutational overlap'
 
         index_free_from_mutation = np.argmin(mutation[to_birth[to_mutate]], 1)
         mutation[to_birth[to_mutate], index_free_from_mutation] = orf_mutation.T[0]  # store mutation
@@ -115,13 +101,30 @@ def mutate(c, d, mutation, sim_env, nr_divide, to_birth, to_divide_nz, environme
     return sim_env, mutation
 
 
+
+def save_growth(s, nr_alive, t):
+    s.append(('growth', nr_alive))
+    s.append(('growth_time', t))
+    return s
+
+
+def save_importants(c, s, i_cycle, distribution_gt, nr_alive, t, mutation, sim_env):
+    s.append(('nr_haploid_types', calc_nr_haplotypes(c, mutation)))
+    distribution_gt[:c.MAXIMUM_NR_AGENTS, i_cycle] = (sim_env['cell_cycle_time'] - c.MEAN_CELL_CYCLE_TIME) / c.MEAN_CELL_CYCLE_TIME
+    s.append(('mean_gt', np.mean(distribution_gt[:, i_cycle])))
+
+    s = save_growth(s, nr_alive, t)
+    return s, distribution_gt
+
+
+
 def sample_and_reset(c, mutation, sim_env):
     # Sample for next cycle
     sample = np.random.choice(c.MAXIMUM_NR_AGENTS, c.SAMPLE_COUNT, replace=False)
     sim_env[:c.SAMPLE_COUNT] = sim_env[sample]
     nr_alive = c.SAMPLE_COUNT
     mutational_sample = mutation[sample]
-    mutation = - np.ones([c.MAXIMUM_NR_AGENTS, 10], dtype='int16')
+    mutation = - np.ones([c.MAXIMUM_NR_AGENTS, 5], dtype='int16')
     mutation[:SAMPLE_COUNT] = mutational_sample
     sim_env['next_division_time'][:c.SAMPLE_COUNT] = sim_env['cell_cycle_time'][:c.SAMPLE_COUNT]
     return sim_env, mutation, nr_alive
@@ -131,13 +134,13 @@ def process_data_and_plot(c, d, s, mutation, environment):
     s_new = dd(list)
     for k, v in s:
         s_new[k].append(v)
-    growth_index = np.where(np.array(s_new['growth'])== int(c.MAXIMUM_NR_AGENTS))[0] + 1
+    growth_index = np.where(np.array(s_new['growth'])== c.MAXIMUM_NR_AGENTS)[0] + 1
     growth_index = np.insert(growth_index, 0, 0)
 
     unique_mutations = np.unique(mutation[mutation >= 0])
     nr_unique_mutations = np.zeros(len(unique_mutations))
     for mut in enumerate(unique_mutations):
-            nr_unique_mutations[mut[0]] = np.count_nonzero(mutation == mut[1])
+        nr_unique_mutations[mut[0]] = np.count_nonzero(mutation == mut[1])
     sorted_count_index = np.argsort(nr_unique_mutations)
 
     unique_mutations = unique_mutations[sorted_count_index]
@@ -145,7 +148,7 @@ def process_data_and_plot(c, d, s, mutation, environment):
     unique_mutated_orfs = orfs[unique_mutations]
     print 'Existing ORF mutations: ', unique_mutated_orfs
     print 'Corresponding counts: ', nr_unique_mutations
-    print 'Tot, GT Effect in pop.: '
+    print 'Tot. effect of GT in pop.: '
     print nr_unique_mutations * d.gen_time[unique_mutations, environment] / c.MAXIMUM_NR_AGENTS
     plot_importants(unique_mutated_orfs, nr_unique_mutations, s_new, growth_index)
 
@@ -155,7 +158,7 @@ def calc_nr_haplotypes(c, mutation):
     haplo_types = np.zeros(c.MAXIMUM_NR_AGENTS)
     for i in xrange(c.MAXIMUM_NR_AGENTS):
         haplo_types[i] = hash(
-            (m[i, 0], m[i, 1], m[i, 2], m[i, 3], m[i, 4], m[i, 5], m[i, 6], m[i, 7], m[i, 8], m[i, 9]))
+            (m[i, 0], m[i, 1], m[i, 2], m[i, 3], m[i, 4]))#, m[i, 5], m[i, 6], m[i, 7], m[i, 8], m[i, 9]))
 
     nr_haplotypes = len(np.unique(haplo_types))
     print 'Nr. different haploid types: ', nr_haplotypes
@@ -184,8 +187,9 @@ def plot_importants(unique_mutated_orfs, nr_unique_mutations, s, growth_index):
         plt.xticks(np.arange(10) + 0.4, unique_mutated_orfs[-10:],rotation='vertical')
         ax.bar(np.arange(10), nr_unique_mutations[-10:], log=True)
     else:
-        plt.xticks(np.arange(5) + 0.4, unique_mutated_orfs[-5:],rotation='vertical')
-        ax.bar(np.arange(5), nr_unique_mutations[-5:], log=True)
+        print
+        plt.xticks(np.arange(3) + 0.4, unique_mutated_orfs[-3:],rotation='vertical')
+        ax.bar(np.arange(3), nr_unique_mutations[-3:], log=True)
     ax.set_xlabel("ORF Names")
     ax.set_ylabel("Nr. of Copies")
     ax.set_title("Top Mutations")
