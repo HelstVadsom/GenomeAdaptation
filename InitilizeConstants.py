@@ -1,10 +1,10 @@
 # Initilization of Constants
 import numpy as np
-from LoadData import nr_LOFM_cumsum #, data3
+from LoadData import orf_target_size_cums #, data3
 
 # GENERAL
 MUTATION_RATE           = 0.33*10**-9 # per base, per division.
-PROB_MUTATION           = MUTATION_RATE * nr_LOFM_cumsum[-1]
+MUTATION_PROB           = MUTATION_RATE * orf_target_size_cums[-1]
 
 ## CONSTANT:
 # scalars
@@ -15,7 +15,7 @@ YIELD                   = 5 # Nr. population doublings.
 MAXIMUM_NR_AGENTS       = FOUNDER_COUNT*2**YIELD # per cycle,
 MEAN_LAG_TIME           = 90 # [min]
 MEAN_CELL_CYCLE_TIME    = 90 # [min]
-EXPERIMENT_TIME         = 72*60
+EXPERIMENT_TIME         = 72*60 # [min]
 
 # vectors
 LAG_TIMES               = MEAN_LAG_TIME + np.random.normal(0, 1, [FOUNDER_COUNT])
