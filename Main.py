@@ -8,7 +8,7 @@
 
 
 def set_up():
-    "Function to make variables inner"
+    """Function to make variables declared in the inner scope"""
     Data = nt('Data', ['orf_target_size_cums', 'gen_time', 'orfs'], verbose=True)
     d = Data(orf_target_size_cums, gen_time, orfs)
 
