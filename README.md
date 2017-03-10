@@ -11,12 +11,10 @@ by: Timmy Forberg
  The likelihood of such mutations is weighted by the yeast's number of Non-Synonymous nucleotides for each ORF. For a more detailed description of the imported data see *Data set up* below."""
 
 **How to run the program:**
-
-  Simple discription<br />
+Simple discription<br />
 - Download all the files. (Store them in the same folder)<br />
 - Run Main.py<br />
-
-  Advanced discription
+Advanced discription<br />
 -  Download all the files in this repo. (Store them in the same folder)  <br />
 -  If you have your own data to use, open LoadData.py and change the filenames to match the filenames of your data.   
 For spesifics on how the data should look, see further below.<br />
@@ -43,7 +41,7 @@ Ex. <br />
 ...  <br />
 
   Third, For each ORF and each environment determine a number GT that will affect a cells cell cycle time like this:                             
-- new_cell cycle_time = old_cell_cycle_time + GT*old_cell_cycle_time  
+- new_cell cycle_time = old_cell_cycle_time + GT*old_cell_cycle_time  <br />
 This is the way a LOF mutation will affect its cells ability to grow.
 
 
