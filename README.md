@@ -34,7 +34,7 @@ YAL034C  <br />
 This file exists so that, if we get a mutation at some index, we know what ORF that corresponds to.
 But practically this data will only be useful in plotting. 
 
-- Second, determine the Target size. 
+- Second, determine the Target size. <br />
 For each ORF above, determine the number of non-synonymous mutations, and determine the number of mutations that will result in stop-codons. Note that only 1 out of 3 specific nucleotide mutations is going to result in an acctual stop-codon. So before adding the two numbers together, go ahead and divide the latter one with a third. This new number is the target size and reflects the probability that a LOF mutation for a particular ORF will occur.
 Ex. <br />
 4  <br />
