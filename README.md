@@ -1,5 +1,5 @@
-# GenomeAdaptation
-***Master thesis project***
+# GenomeAdaptation<br />
+***Master thesis project***<br />
 by: Timmy Forberg
 
 """This code grows yeast-cells that divide and mutate to adapt to an evolutionary pressure (a toxic environment).
