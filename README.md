@@ -45,8 +45,12 @@ Ex. <br />
 - Third, For each ORF and each environment determine a number GT that will affect a cells cell cycle time like this: <br />                         
 *new_cell cycle_time = old_cell_cycle_time + GT*old_cell_cycle_time*  <br />
 
-This is the way a LOF mutation will affect its cells ability to grow.
-
+This is the way a LOF mutation will affect its cells ability to grow.<br />
+Ex. showing GT data for 3 enviorments and 4 LOF mutations <br />
+-0.003 0.01 0.04<br />
+-0.15 -0.09 2.6<br />
+0.535 -0.01 0<br />
+0.134 0.8 -1.3<br />
 
                             
 
