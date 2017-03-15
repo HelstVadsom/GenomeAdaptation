@@ -218,11 +218,13 @@ def run(const, data, environment, sim_env, mutation):
 
 def load_default_static_simulation_settings():
 
-    Constants = nt('Constants', ['NR_CYCLES', 'FOUNDER_COUNT', 'SAMPLE_COUNT', 'YIELD', 'MAXIMUM_NR_AGENTS', 'MEAN_LAG_TIME',
-                                                     'MEAN_CELL_CYCLE_TIME', 'EXPERIMENT_TIME', 'MUTATION_PROB',
-                                                     'LAG_TIMES', 'CELL_CYCLE_TIMES', 'FOUNDER_ID', 'OVERLAP_ALLOWED','TIME_STEP'], verbose=True)
-    const = Constants(NR_CYCLES, FOUNDER_COUNT, SAMPLE_COUNT, YIELD, MAXIMUM_NR_AGENTS, MEAN_LAG_TIME, MEAN_CELL_CYCLE_TIME,
-                  EXPERIMENT_TIME, MUTATION_PROB, LAG_TIMES, CELL_CYCLE_TIMES, FOUNDER_ID, OVERLAP_ALLOWED, TIME_STEP)
+    Constants = nt('Constants', ['NR_CYCLES', 'FOUNDER_COUNT', 'SAMPLE_COUNT', 'YIELD', 'MAXIMUM_NR_AGENTS',
+                                 'MEAN_LAG_TIME', 'MEAN_CELL_CYCLE_TIME', 'EXPERIMENT_TIME', 'MUTATION_PROB',
+                                 'LAG_TIMES', 'CELL_CYCLE_TIMES', 'FOUNDER_ID', 'OVERLAP_ALLOWED','TIME_STEP'],
+                   verbose=True)
+    const = Constants(NR_CYCLES, FOUNDER_COUNT, SAMPLE_COUNT, YIELD, MAXIMUM_NR_AGENTS, MEAN_LAG_TIME,
+                      MEAN_CELL_CYCLE_TIME, EXPERIMENT_TIME, MUTATION_PROB, LAG_TIMES, CELL_CYCLE_TIMES, FOUNDER_ID,
+                      OVERLAP_ALLOWED, TIME_STEP)
 
     return const
 
