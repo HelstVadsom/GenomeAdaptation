@@ -22,7 +22,8 @@ def lag_f(const, sim_env, i_cycle, lag, is_lagging, t):
 
 
 def divide(const, data, mutation, sim_env, nr_alive, t, still_in_cycle, environment):
-    to_divide = (sim_env['next_division_time'][:nr_alive] <= t)
+    to_divide = (sim_env['next_division_time'][:nr_alive] <= t) * \
+                (sim_env['nr_divisions'][:nr_alive] <= const.MAXIMUM_NR_DIVISIONS)
     nr_divide = np.sum(to_divide)
     if nr_divide:
         to_divide_nz = np.nonzero(to_divide)[0]
@@ -113,11 +114,11 @@ def sample_and_reset(const, mutation, sim_env):
     return sim_env, mutation, nr_alive
 
 
-def process_data_and_plot(const, data, save,  mutation, environment):
+def process_data_and_plot(const, data, save,  mutation, environment, plot):
     save_processed  = dd(list)
     for k, v in save:
-        save_processed [k].append(v)
-    growth_index = np.where(np.array(save_processed ['growth'])== const.MAXIMUM_NR_AGENTS)[0] + 1
+        save_processed[k].append(v)
+    growth_index = np.where(np.array(save_processed['growth'])== const.MAXIMUM_NR_AGENTS)[0] + 1
     growth_index = np.insert(growth_index, 0, 0)
 
     unique_mutations = np.unique(mutation[mutation >= 0])
@@ -133,8 +134,10 @@ def process_data_and_plot(const, data, save,  mutation, environment):
     print 'Corresponding counts: ', nr_unique_mutations
     print 'Tot. effect of GT in pop.: '
     print nr_unique_mutations * data.gen_time[unique_mutations, environment] / const.MAXIMUM_NR_AGENTS
-    plot_importants(unique_mutated_orfs, nr_unique_mutations, save_processed, growth_index)
+    if plot:
+        plot_importants(unique_mutated_orfs, nr_unique_mutations, save_processed, growth_index)
 
+    return save_processed, unique_mutated_orfs, nr_unique_mutations
 
 def calc_nr_haplotypes(const, mutation):
     m = np.sort(mutation)
@@ -186,7 +189,7 @@ def plot_importants(unique_mutated_orfs, nr_unique_mutations, save,  growth_inde
     plt.show()
 
 
-def run(const, data, environment, sim_env, mutation):
+def run(func, const, data, environment, sim_env, mutation):
 
     save = [('growth', const.FOUNDER_COUNT), ('growth_time', 0), ('nr_haploid_types', 0)] # 1D saveables
     distribution_gt = np.zeros([const.MAXIMUM_NR_AGENTS, const.NR_CYCLES])
@@ -201,16 +204,16 @@ def run(const, data, environment, sim_env, mutation):
         is_lagging = np.ones(nr_alive)
         still_in_cycle = 1
         while still_in_cycle:
-            lag, is_lagging, sim_env = lag_f(const, sim_env, i_cycle, lag, is_lagging, t)
-            save = save_growth(save,  nr_alive, t)
+            lag, is_lagging, sim_env = func.lag_f(const, sim_env, i_cycle, lag, is_lagging, t)
+            save = func.save_growth(save,  nr_alive, t)
             t += const.TIME_STEP
             nr_alive, sim_env, mutation, still_in_cycle = \
-                divide(const, data, mutation, sim_env, nr_alive, t, still_in_cycle, environment)
+                func.divide(const, data, mutation, sim_env, nr_alive, t, still_in_cycle, environment)
 
         # Do After a cycle
-        save,  distribution_gt = save_importants(const, save,  i_cycle, distribution_gt, nr_alive, t, mutation, sim_env)
+        save, distribution_gt = func.save_importants(const, save,  i_cycle, distribution_gt, nr_alive, t, mutation, sim_env)
         if i_cycle != const.NR_CYCLES - 1:
-            sim_env, mutation, nr_alive = sample_and_reset(const, mutation, sim_env)
+            sim_env, mutation, nr_alive = func.sample_and_reset(const, mutation, sim_env)
 
 
     return save, mutation
@@ -220,11 +223,12 @@ def load_default_static_simulation_settings():
 
     Constants = nt('Constants', ['NR_CYCLES', 'FOUNDER_COUNT', 'SAMPLE_COUNT', 'YIELD', 'MAXIMUM_NR_AGENTS',
                                  'MEAN_LAG_TIME', 'MEAN_CELL_CYCLE_TIME', 'EXPERIMENT_TIME', 'MUTATION_PROB',
-                                 'LAG_TIMES', 'CELL_CYCLE_TIMES', 'FOUNDER_ID', 'OVERLAP_ALLOWED','TIME_STEP'],
+                                 'LAG_TIMES', 'CELL_CYCLE_TIMES', 'FOUNDER_ID', 'OVERLAP_ALLOWED','TIME_STEP',
+                                 'MAXIMUM_NR_DIVISIONS'],
                    verbose=True)
     const = Constants(NR_CYCLES, FOUNDER_COUNT, SAMPLE_COUNT, YIELD, MAXIMUM_NR_AGENTS, MEAN_LAG_TIME,
                       MEAN_CELL_CYCLE_TIME, EXPERIMENT_TIME, MUTATION_PROB, LAG_TIMES, CELL_CYCLE_TIMES, FOUNDER_ID,
-                      OVERLAP_ALLOWED, TIME_STEP)
+                      OVERLAP_ALLOWED, TIME_STEP, MAXIMUM_NR_DIVISIONS)
 
     return const
 
@@ -237,7 +241,10 @@ def setup_data_structure():
 
 def setup_default_run_fucntions():
 
-    return
+    Functions = nt('Functions', ['lag_f', 'save_growth', 'divide', 'save_importants', 'sample_and_reset'], verbose=True)
+    func = Functions(lag_f, save_growth, divide, save_importants, sample_and_reset)
+
+    return func
 
 
 if __name__ == "__main__": # \todo Create functions
@@ -265,10 +272,22 @@ if __name__ == "__main__": # \todo Create functions
 
     data = setup_data_structure()
 
-#    run_functions = setup_default_run_fucntions()
+    func = setup_default_run_fucntions()
 
-    save, mutation = run(const, data, environment, sim_env, mutation)
+    save, mutation = run(func, const, data, environment, sim_env, mutation)
 
     # Do After All cycles
-    process_data_and_plot(const, data, save,  mutation, environment)
-    #save(data)
+    save_processed, unique_mutated_orfs, nr_unique_mutations = \
+        process_data_and_plot(const, data, save,  mutation, environment, plot=0)
+
+    import csv
+    f = open('dict_collection.csv', 'a')
+    writer = csv.DictWriter(f, save_processed.keys())
+    writer.writerows(save_processed)
+    f.close()
+
+
+
+    np.save('collection_unique_mutated_orfs.txt', unique_mutated_orfs)
+    np.save('collection_nr_unique_mutations.txt', nr_unique_mutations)
+
