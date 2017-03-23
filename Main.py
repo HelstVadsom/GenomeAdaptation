@@ -47,7 +47,6 @@ def divide(const, data, mutation, sim_env, nr_alive, t, still_in_cycle, environm
         sim_env['nr_divisions'][to_divide] += 1
         mutation[to_birth] = mutation[to_divide]
 
-        ## Mutate
         sim_env, mutation = mutate(const, data, mutation, sim_env, nr_divide, to_birth, to_divide_nz, environment)
         nr_alive += nr_divide
     return nr_alive, sim_env, mutation, still_in_cycle
@@ -239,7 +238,7 @@ def setup_data_structure():
     return data
 
 
-def setup_default_run_fucntions():
+def setup_default_run_functions():
 
     Functions = nt('Functions', ['lag_f', 'save_growth', 'divide', 'save_importants', 'sample_and_reset'], verbose=True)
     func = Functions(lag_f, save_growth, divide, save_importants, sample_and_reset)
@@ -255,6 +254,7 @@ if __name__ == "__main__": # \todo Create functions
     from InitilizeConstants import *
     from LoadData import orf_target_size_cums, gen_time, orfs
 
+    dir = 'trashData/'  # save directory
     environment = 0
 
     #  MEMORY TABLE:
@@ -272,7 +272,7 @@ if __name__ == "__main__": # \todo Create functions
 
     data = setup_data_structure()
 
-    func = setup_default_run_fucntions()
+    func = setup_default_run_functions()
 
     save, mutation = run(func, const, data, environment, sim_env, mutation)
 
@@ -280,14 +280,13 @@ if __name__ == "__main__": # \todo Create functions
     save_processed, unique_mutated_orfs, nr_unique_mutations = \
         process_data_and_plot(const, data, save,  mutation, environment, plot=0)
 
-    import csv
-    f = open('dict_collection.csv', 'a')
-    writer = csv.DictWriter(f, save_processed.keys())
-    writer.writerows(save_processed)
-    f.close()
+    import pickle
 
+    filenumber = str(hash(np.random.random()))
+    with open(dir + 'save' + filenumber + '.pkl', 'wb') as f:
+        pickle.dump(save, f, pickle.HIGHEST_PROTOCOL)
 
+    np.save(dir + 'mutated_orfs' + filenumber + '.npy', unique_mutated_orfs)
 
-    np.save('collection_unique_mutated_orfs.txt', unique_mutated_orfs)
-    np.save('collection_nr_unique_mutations.txt', nr_unique_mutations)
+    np.save(dir + 'unique_mutations' + filenumber + '.npy', nr_unique_mutations)
 
