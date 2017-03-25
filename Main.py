@@ -1,293 +1,171 @@
-    """This code grows yeast-cells that divide and mutate to adapt to an evolutionary pressure (a toxic environment).
- The growth happens in cycles where at the end of each cycle the population is reduced to then regrow in the next cycle.
- Over these cycles, agents collect mutations that can change its cycle time, making it divide faster or slower.
+import numpy as np
+# from numpy import *
+# execfile("LoadData.py")
+# execfile("InitilizeParameters.py")
+# execfile("CreateIndividuals.py")
 
- The size of such a change is determined by deletion data (i.e real measurements of yeast growth change for each Loss of
- ORF-function for each evolutionary pressure.
- The likelihood of such mutations is weighted by the yeast's number of Non-Synonymous nucleotides for each ORF."""
+from LoadData import *
+from InitilizeParameters import *
+from CreateIndividuals import sim_env
 
+# \todo: HERE, Delete variables we don't need anymore.
+# data1 = data2 = None # delete unneccesary variables.
 
-def lag_f(const, sim_env, i_cycle, lag, is_lagging, t):
-    if lag:
-        was_lagging = is_lagging
-        if i_cycle == 0:
-            is_lagging = (sim_env['lag_time'][:const.FOUNDER_COUNT] > t)
-        else:
-            is_lagging = (sim_env['lag_time'][:const.SAMPLE_COUNT] > t)
-        lag = any(is_lagging)
-        sim_env['next_division_time'][is_lagging] += const.TIME_STEP  # Postpone next division
-        lag_escapists = np.bool_(was_lagging * (1 - is_lagging))
-        sim_env['next_division_time'][lag_escapists] -= t - sim_env['lag_time'][lag_escapists]
-    return lag, is_lagging, sim_env
-
-
-def divide(const, data, mutation, sim_env, nr_alive, t, still_in_cycle, environment):
-    to_divide = (sim_env['next_division_time'][:nr_alive] <= t) * \
-                (sim_env['nr_divisions'][:nr_alive] <= const.MAXIMUM_NR_DIVISIONS)
-    nr_divide = np.sum(to_divide)
-    if nr_divide:
-        to_divide_nz = np.nonzero(to_divide)[0]
-        to_birth = np.arange(nr_alive, (nr_alive + nr_divide))
-
-        if nr_alive + len(to_birth) >= const.MAXIMUM_NR_AGENTS: # Checks if it's time to begin a new cycle.
-            nr_divide_reduced = const.MAXIMUM_NR_AGENTS - nr_alive
-            to_birth = np.arange(nr_alive, (nr_alive + nr_divide_reduced))
-            to_divide_nz = to_divide_nz[np.random.choice(nr_divide, nr_divide_reduced, replace=False)]
-            to_divide = to_divide_nz
-            nr_divide = nr_divide_reduced
-            sim_env['age'][:const.MAXIMUM_NR_AGENTS] += const.EXPERIMENT_TIME
-            still_in_cycle = 0
-            print 'About to exit cycle'
-
-        sim_env['founder_id'][to_birth] = to_divide_nz # Copies traits
-        sim_env['lag_time'][to_birth] = sim_env['lag_time'][to_divide]
-        sim_env['cell_cycle_time'][to_birth] = sim_env['cell_cycle_time'][to_divide]
-        sim_env['next_division_time'][to_divide] += sim_env['cell_cycle_time'][to_divide]
-        sim_env['next_division_time'][to_birth] = sim_env['next_division_time'][to_divide]
-        sim_env['nr_divisions'][to_divide] += 1
-        mutation[to_birth] = mutation[to_divide]
-
-        sim_env, mutation = mutate(const, data, mutation, sim_env, nr_divide, to_birth, to_divide_nz, environment)
-        nr_alive += nr_divide
-    return nr_alive, sim_env, mutation, still_in_cycle
+lag_time = \
+    lag_escape = \
+    cell_cycle_time = \
+    founder_id = \
+    age = \
+    nr_divitions = \
+    divition_time = \
+    mutation = None
 
 
-def mutate(const, data, mutation, sim_env, nr_divide, to_birth, to_divide_nz, environment):
-    to_mutate = np.random.random(nr_divide) < const.MUTATION_PROB
-    if any(to_mutate):
-        mutation_cite = np.random.random([sum(to_mutate), 1]) * (data.orf_target_size_cums[-1])  # pick mutation
-        orf_mutation = np.searchsorted(data.orf_target_size_cums, mutation_cite, side='right')  # peek mutation
+def run():
 
-        if ~const.OVERLAP_ALLOWED:
-            overlap = (mutation[[to_birth[to_mutate]], :] == orf_mutation)[0]  # forbids > 1 mutation per orf for each agent.
-            # Warning: Above line, Not the same in ipython as pycharm
-            # (in ipython this line is to be exec. without the [0]).
-            if np.any(overlap):
-                print 'Found mutational overlap'
-                overlapping_columns = np.nonzero(overlap)[0]
-                orf_mutation = np.delete(orf_mutation, overlapping_columns)  # disposes agents ORF mutation.
-                orf_mutation_nz = np.nonzero(to_mutate)[0]
-                to_mutate[orf_mutation_nz[overlapping_columns]] = False  # prevents agents ORF to mutate.
-                print 'Deleted mutational overlap'
+    t = 0
+    nr_alive = FOUNDER_COUNT
+    growth = nr_alive
+    growth_time = 0
+    cycle_time = 0
+    for i_cycle in xrange(NR_CYCLES):
+        print 'i_env = ', i_env, 'i_cycle = ', i_cycle
+        lag = 1
+        still_in_cycle = 1 # 1
+        if __name__ == '__main__':
+            while still_in_cycle:
 
-        index_free_from_mutation = np.argmin(mutation[to_birth[to_mutate]], 1)
-        mutation[to_birth[to_mutate], index_free_from_mutation] = orf_mutation.T[0]  # store mutation
+                # Check lag \todo: make into seperate functions. (LAG AND TIME_STEP)
+                if lag: # \todo: Make lagging take place at every cycle. And introduce lag escape.
+                    time_step = MINIMUM_TIME_RESOLUTION
+                    lagging = (sim_env['lag_time'][:nr_alive] > 0)
+                    lag = any(lagging)
+                    sim_env['lag_time'][lagging] -= time_step
+                    sim_env['next_divition'][lagging] += time_step
+                else: # set another time_step
+                    if time_step != MINIMUM_TIME_RESOLUTION or np.random.random() < A_MYSTICAL_SPEED_UP_PARAMETER:
+                            soonest_division = np.min([sim_env['next_divition'][:nr_alive]])
+                            time_step = np.max([MINIMUM_TIME_RESOLUTION, soonest_division - t]) # find biggest time increment
 
-        sim_env['cell_cycle_time'][to_birth[to_mutate]] = \
-            sim_env['cell_cycle_time'][to_divide_nz[to_mutate]] + \
-            data.gen_time[orf_mutation, environment] * const.MEAN_CELL_CYCLE_TIME
+                if MEASUREMENTS_AT_EVERY:
+                    do_measurements = np.floor((t + time_step) / MEASUREMENTS_AT_EVERY) - np.floor(t / MEASUREMENTS_AT_EVERY)
+                    if do_measurements: # Saves data for Growth curve
+                        growth = np.append(growth, np.tile(nr_alive,do_measurements))
+                        # \todo:  growth_time = np.append(MEASUREMENTS_AT_EVERY)
+                else:
+                    growth = np.append(growth, nr_alive)
+                    growth_time = np.append(growth_time, t)
 
-        sim_env['next_division_time'][to_birth[to_mutate]] += \
-            sim_env['cell_cycle_time'][to_birth[to_mutate]] - \
-            sim_env['cell_cycle_time'][to_divide_nz[to_mutate]]
+                t += time_step
 
-    return sim_env, mutation
+                ## Divide
+                to_divide = (sim_env['next_divition'][:nr_alive] <= t)
+                nr_divide = np.sum(to_divide)
+                if nr_divide:
+                    divide_index = np.nonzero(to_divide)[0]
+                    to_birth = np.arange(nr_alive,(nr_alive + nr_divide))
 
+                    if nr_alive + len(to_birth) >= MAXIMUM_NR_AGENTS: # If this is the last iteration before a new cycle.
+                        nr_divide_reduced = MAXIMUM_NR_AGENTS - nr_alive
+                        to_birth = np.arange(nr_alive, (nr_alive + nr_divide_reduced))
+                        divide_index = divide_index[np.random.choice(nr_divide, nr_divide_reduced, replace=False)]
+                        to_divide = divide_index
+                        nr_divide = nr_divide_reduced
+                        still_in_cycle = 0 # Exits while loop.
+                        print 'About to exit cycle'
 
+                    sim_env['founder_id'][to_birth] = divide_index
+                    sim_env['lag_time'][to_birth] = sim_env['lag_time'][to_divide]
+                    sim_env['cell_cycle_time'][to_birth] = sim_env['cell_cycle_time'][to_divide]
+                    sim_env['next_divition'][to_divide] = t + sim_env['cell_cycle_time'][to_divide] # \todo: review division.
+                    sim_env['next_divition'][to_birth] = sim_env['next_divition'][to_divide]
+                    sim_env['nr_divitions'][to_divide] += 1
 
-def save_growth(save,  nr_alive, t):
-    save.append(('growth', nr_alive))
-    save.append(('growth_time', t))
-    return save
+                    ## Mutate
+                    to_mutate = np.random.random(nr_divide) < PROB_MUTATION
+                    if any(to_mutate): # \todo: store mutations. Make sure they are copied at division.
+                        mutate_orf = np.random.random([sum(to_mutate), 1]) * (data1_Cum[-1]) # pick mutation
+                        orf_index = np.searchsorted(data1_Cum, mutate_orf, side='right') # peek mutation
+                        # mutation[to_birth[to_mutate]] = orf_index  # store mutation
+                        # divide_index = np.nonzero(to_divide)[0]
+                        print 'time is ', t
+                        print 'alive: ', nr_alive
+                        print 'GT mutaion(s): ', gen_time[orf_index, i_env]
+                        sim_env['cell_cycle_time'][to_birth[to_mutate]] = \
+                            sim_env['cell_cycle_time'][divide_index[to_mutate]] + gen_time[orf_index, i_env] * MEAN_CELL_CYCLE_TIME
+                        sim_env['next_divition'][to_birth[to_mutate]] = t + sim_env['cell_cycle_time'][to_birth[to_mutate]]
 
+                ## Population ages
+                sim_env['age'][:nr_alive] += 0.1
+                nr_alive += nr_divide
 
-def save_importants(const, save,  i_cycle, distribution_gt, nr_alive, t, mutation, sim_env):
-    save.append(('nr_haploid_types', calc_nr_haplotypes(const, mutation)))
-    distribution_gt[:const.MAXIMUM_NR_AGENTS, i_cycle] = (sim_env['cell_cycle_time'] - const.MEAN_CELL_CYCLE_TIME) / const.MEAN_CELL_CYCLE_TIME
-    save.append(('mean_gt', np.mean(distribution_gt[:, i_cycle])))
+                # Check cycle exit condition
+                #if nr_alive >= MAXIMUM_NR_AGENTS: # superfluos? Seems so! Most likely so! OF COURSE!
+                #    still_in_cycle = 0
+                #    print 'Exiting cycle: ', i_cycle
 
-    s = save_growth(save,  nr_alive, t)
-    return save,  distribution_gt
+                # \todo: Save data for Evolutionary tree, Look plot code online. Binary tree!
+                    # mutations and mothers for all mutated cells
+                    # nr unmutated cells,
+                    # time of mutation
+                # \todo: Save data to create histogram of mutations
+                # \todo: Save data to determine nr of haplotypes.
 
+        # Save data for histograms of GT
+        gt_cycle[:MAXIMUM_NR_AGENTS, i_cycle] = (sim_env['cell_cycle_time'] - MEAN_CELL_CYCLE_TIME) / MEAN_CELL_CYCLE_TIME
 
+        # Save meanGT
+        meanGT[i_cycle] = np.mean(gt_cycle[:,i_cycle]) #np.mean(sim_env['cell_cycle_time'][:MAXIMUM_NR_AGENTS])
 
-def sample_and_reset(const, mutation, sim_env):
-    # Sample for next cycle
-    sample = np.random.choice(const.MAXIMUM_NR_AGENTS, const.SAMPLE_COUNT, replace=False)
-    sim_env[:const.SAMPLE_COUNT] = sim_env[sample]
-    nr_alive = const.SAMPLE_COUNT
-    mutational_sample = mutation[sample]
-    mutation = - np.ones([const.MAXIMUM_NR_AGENTS, 5], dtype='int16')
-    mutation[:const.SAMPLE_COUNT] = mutational_sample
-    sim_env['next_division_time'][:const.SAMPLE_COUNT] = sim_env['cell_cycle_time'][:const.SAMPLE_COUNT]
-    return sim_env, mutation, nr_alive
+        cycle_time = np.append(cycle_time, t) # stores cycle exit time
 
-
-def process_data_and_plot(const, data, save,  mutation, environment, plot):
-    save_processed  = dd(list)
-    for k, v in save:
-        save_processed[k].append(v)
-
-    unique_mutations = np.unique(mutation[mutation >= 0])
-    nr_unique_mutations = np.zeros(len(unique_mutations))
-    for mut in enumerate(unique_mutations):
-        nr_unique_mutations[mut[0]] = np.count_nonzero(mutation == mut[1])
-    sorted_count_index = np.argsort(nr_unique_mutations)
-
-    unique_mutations = unique_mutations[sorted_count_index]
-    nr_unique_mutations = nr_unique_mutations[sorted_count_index]
-    unique_mutated_orfs = data.orfs[unique_mutations]
-    #print 'Existing ORF mutations: ', unique_mutated_orfs
-    #print 'Corresponding counts: ', nr_unique_mutations
-    #print 'Tot. effect of GT in pop.: '
-    #print nr_unique_mutations * data.gen_time[unique_mutations, environment] / const.MAXIMUM_NR_AGENTS
-    if plot:
-        growth_index = np.where(np.array(save_processed['growth']) == const.MAXIMUM_NR_AGENTS)[0] + 1
-        growth_index = np.insert(growth_index, 0, 0)
-        plot_importants(unique_mutated_orfs, nr_unique_mutations, save_processed, growth_index)
-
-    return save_processed, unique_mutated_orfs, nr_unique_mutations
-
-
-def calc_nr_haplotypes(const, mutation):
-    m = np.sort(mutation)
-    haplo_types = np.zeros(const.MAXIMUM_NR_AGENTS)
-    for i in xrange(const.MAXIMUM_NR_AGENTS):
-        haplo_types[i] = hash(
-            (m[i, 0], m[i, 1], m[i, 2], m[i, 3], m[i, 4]))#, m[i, 5], m[i, 6], m[i, 7], m[i, 8], m[i, 9]))
-
-    nr_haplotypes = len(np.unique(haplo_types))
-    print 'Nr. different haploid types: ', nr_haplotypes
-    return nr_haplotypes
+        # Sample for next cycle
+        sample = np.random.choice(MAXIMUM_NR_AGENTS, SAMPLE_COUNT,replace=False)
+        sim_env[:SAMPLE_COUNT] = sim_env[sample]
+        nr_alive = SAMPLE_COUNT
 
 
-def plot_importants(unique_mutated_orfs, nr_unique_mutations, save,  growth_index):
-
+    # \todo: generate plots, in a seperate function.
     import matplotlib.pyplot as plt
-    plt.figure(1, figsize=(2.75, 2.0))
-    for i in range(len(growth_index) - 1):
-        plt.plot(save['growth_time'][growth_index[i]:growth_index[i+1]],
-                 save['growth'][growth_index[i]:growth_index[i+1]], '-')
-    plt.xlabel("t [min]")
-    plt.ylabel("Population")
-    plt.title("Growth Curves")
+    plt.figure(1, figsize=(2.75, 2.0)) # \todo: Make the growth curves plot on top of each other, maybe by implementing a local, cycle time. As We did from the start.
+
+    if MEASUREMENTS_AT_EVERY:
+        plt.plot(np.linspace(0, len(growth)*MEASUREMENTS_AT_EVERY, len(growth)), growth, '-')
+    else:
+        plt.plot(growth_time, growth, '-')
+
+    plt.savefig('plt_ex1.pdf')
 
     plt.figure(2, figsize=(2.75, 2.0))
-    plt.plot(save['mean_gt'])
-    plt.xlabel("Cycle")
-    plt.ylabel("Mean GT")
-    plt.title("Mean GT")
+    plt.plot(meanGT)
+    plt.savefig('plt_ex2.pdf')
 
-    fig = plt.figure(3, figsize=(2.75, 2.0))
-    ax = fig.add_subplot(111)
-    if len(unique_mutated_orfs) > 10:
-        plt.xticks(np.arange(10) + 0.4, unique_mutated_orfs[-10:],rotation='vertical')
-        ax.bar(np.arange(10), nr_unique_mutations[-10:], log=True)
-    else:
-        print
-        plt.xticks(np.arange(3) + 0.4, unique_mutated_orfs[-3:],rotation='vertical')
-        ax.bar(np.arange(3), nr_unique_mutations[-3:], log=True)
-    ax.set_xlabel("ORF Names")
-    ax.set_ylabel("Nr. of Copies")
-    ax.set_title("Top Mutations")
-    ax.set_yscale('log', nonposy="clip")
-
-    plt.figure(4, figsize=(2.75, 2.0))
-    plt.plot(save['nr_haploid_types'])
-    plt.xlabel("Cycle")
-    plt.ylabel("Nr. of Haploid Types")
     plt.show()
 
+ # \todo: reset time, for simplicity. (How it used to be)
 
-def run(func, const, data, environment, sim_env, mutation):
+    #if cycle_time > i * MEASUREMENTS_AT_EVERY
 
-    save = [('growth', const.FOUNDER_COUNT), ('growth_time', 0), ('nr_haploid_types', 0)] # 1D saveables
-    distribution_gt = np.zeros([const.MAXIMUM_NR_AGENTS, const.NR_CYCLES])
-
-    nr_alive = const.FOUNDER_COUNT
-
-    for i_cycle in xrange(const.NR_CYCLES):
-        i_cycle = i_cycle
-        print 'environment = ', environment, 'i_cycle = ', i_cycle
-        t = 0
-        lag = 1
-        is_lagging = np.ones(nr_alive)
-        still_in_cycle = 1
-        while still_in_cycle:
-            lag, is_lagging, sim_env = func.lag_f(const, sim_env, i_cycle, lag, is_lagging, t)
-            save = func.save_growth(save,  nr_alive, t)
-            t += const.TIME_STEP
-            nr_alive, sim_env, mutation, still_in_cycle = \
-                func.divide(const, data, mutation, sim_env, nr_alive, t, still_in_cycle, environment)
-
-        # Do After a cycle
-        save, distribution_gt = func.save_importants(const, save,  i_cycle, distribution_gt, nr_alive, t, mutation, sim_env)
-        if i_cycle != const.NR_CYCLES - 1:
-            sim_env, mutation, nr_alive = func.sample_and_reset(const, mutation, sim_env)
-
-
-    return save, mutation
-
-
-def load_default_static_simulation_settings():
-
-    Constants = nt('Constants', ['NR_CYCLES', 'FOUNDER_COUNT', 'SAMPLE_COUNT', 'YIELD', 'MAXIMUM_NR_AGENTS',
-                                 'MEAN_LAG_TIME', 'MEAN_CELL_CYCLE_TIME', 'EXPERIMENT_TIME', 'MUTATION_PROB',
-                                 'LAG_TIMES', 'CELL_CYCLE_TIMES', 'FOUNDER_ID', 'OVERLAP_ALLOWED', 'TIME_STEP',
-                                 'MAXIMUM_NR_DIVISIONS'],
-                   verbose=True)
-    const = Constants(NR_CYCLES, FOUNDER_COUNT, SAMPLE_COUNT, YIELD, MAXIMUM_NR_AGENTS, MEAN_LAG_TIME,
-                      MEAN_CELL_CYCLE_TIME, EXPERIMENT_TIME, MUTATION_PROB, LAG_TIMES, CELL_CYCLE_TIMES, FOUNDER_ID,
-                      OVERLAP_ALLOWED, TIME_STEP, MAXIMUM_NR_DIVISIONS)
-
-    return const
-
-
-def setup_data_structure():
-    Data = nt('Data', ['orf_target_size_cums', 'gen_time', 'orfs'], verbose=True)
-    data = Data(orf_target_size_cums, gen_time, orfs)
-    return data
-
-
-def setup_default_run_functions():
-
-    Functions = nt('Functions', ['lag_f', 'save_growth', 'divide', 'save_importants', 'sample_and_reset'], verbose=True)
-    func = Functions(lag_f, save_growth, divide, save_importants, sample_and_reset)
-
-    return func
+#def plot():
 
 
 if __name__ == "__main__": # \todo Create functions
-    import numpy as np
-    from collections import namedtuple as nt
-    from collections import defaultdict as dd
-    from CreateIndividuals import sim_env, mutation
-    from InitilizeConstants import *
-    from LoadData import orf_target_size_cums, gen_time, orfs
+    i_env = 0
 
-    dir = 'trashData/'  # save directory
-    environment = 0
+    # 'Arsenite'   (i_env = 0)
+    # 'Citric_Acid'(i_env = 1)
+    # 'Citrulline' (i_env = 2)
+    # 'Glycine'    (i_env = 3)
+    # 'Isoleucine' (i_env = 4)
+    # 'Paraquat'   (i_env = 5)
+    # 'Rapamycin'  (i_env = 6)
+    # 'SC'         (i_env = 7)
+    # 'Tryptophan' (i_env = 8)
 
-    #  MEMORY TABLE:
-    # 'Arsenite'   (environment = 0)
-    # 'Citric_Acid'(environment = 1)
-    # 'Citrulline' (environment = 2)
-    # 'Glycine'    (environment = 3)
-    # 'Isoleucine' (environment = 4)
-    # 'Paraquat'   (environment = 5)
-    # 'Rapamycin'  (environment = 6)
-    # 'SC'         (environment = 7)
-    # 'Tryptophan' (environment = 8)
+    #[growth, meanGT] = run()
+    run()
+    #plot()
+    # \todo: Clean up the code! it's messy!
 
-    const = load_default_static_simulation_settings()
-
-    data = setup_data_structure()
-
-    func = setup_default_run_functions()
-
-    save, mutation = run(func, const, data, environment, sim_env, mutation)
-
-    # Do After All cycles
-    save_processed, unique_mutated_orfs, nr_unique_mutations = \
-        process_data_and_plot(const, data, save,  mutation, environment, plot=0)
-
-    import pickle
-
-    filenumber = str(hash(np.random.random()))
-    with open(dir + 'save' + filenumber + '.pkl', 'wb') as f:
-        pickle.dump(save, f, pickle.HIGHEST_PROTOCOL)
-
-    np.save(dir + 'mutated_orfs' + filenumber + '.npy', unique_mutated_orfs)
-
-    np.save(dir + 'unique_mutations' + filenumber + '.npy', nr_unique_mutations)
-
+    # \todo: save the last time point as well.
+# But Wait we already know the times at which the number is set.
