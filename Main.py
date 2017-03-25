@@ -1,4 +1,4 @@
-"""This code grows yeast-cells that divide and mutate to adapt to an evolutionary pressure (a toxic environment).
+    """This code grows yeast-cells that divide and mutate to adapt to an evolutionary pressure (a toxic environment).
  The growth happens in cycles where at the end of each cycle the population is reduced to then regrow in the next cycle.
  Over these cycles, agents collect mutations that can change its cycle time, making it divide faster or slower.
 
@@ -117,8 +117,6 @@ def process_data_and_plot(const, data, save,  mutation, environment, plot):
     save_processed  = dd(list)
     for k, v in save:
         save_processed[k].append(v)
-    growth_index = np.where(np.array(save_processed['growth'])== const.MAXIMUM_NR_AGENTS)[0] + 1
-    growth_index = np.insert(growth_index, 0, 0)
 
     unique_mutations = np.unique(mutation[mutation >= 0])
     nr_unique_mutations = np.zeros(len(unique_mutations))
@@ -129,14 +127,17 @@ def process_data_and_plot(const, data, save,  mutation, environment, plot):
     unique_mutations = unique_mutations[sorted_count_index]
     nr_unique_mutations = nr_unique_mutations[sorted_count_index]
     unique_mutated_orfs = data.orfs[unique_mutations]
-    print 'Existing ORF mutations: ', unique_mutated_orfs
-    print 'Corresponding counts: ', nr_unique_mutations
-    print 'Tot. effect of GT in pop.: '
-    print nr_unique_mutations * data.gen_time[unique_mutations, environment] / const.MAXIMUM_NR_AGENTS
+    #print 'Existing ORF mutations: ', unique_mutated_orfs
+    #print 'Corresponding counts: ', nr_unique_mutations
+    #print 'Tot. effect of GT in pop.: '
+    #print nr_unique_mutations * data.gen_time[unique_mutations, environment] / const.MAXIMUM_NR_AGENTS
     if plot:
+        growth_index = np.where(np.array(save_processed['growth']) == const.MAXIMUM_NR_AGENTS)[0] + 1
+        growth_index = np.insert(growth_index, 0, 0)
         plot_importants(unique_mutated_orfs, nr_unique_mutations, save_processed, growth_index)
 
     return save_processed, unique_mutated_orfs, nr_unique_mutations
+
 
 def calc_nr_haplotypes(const, mutation):
     m = np.sort(mutation)
@@ -222,7 +223,7 @@ def load_default_static_simulation_settings():
 
     Constants = nt('Constants', ['NR_CYCLES', 'FOUNDER_COUNT', 'SAMPLE_COUNT', 'YIELD', 'MAXIMUM_NR_AGENTS',
                                  'MEAN_LAG_TIME', 'MEAN_CELL_CYCLE_TIME', 'EXPERIMENT_TIME', 'MUTATION_PROB',
-                                 'LAG_TIMES', 'CELL_CYCLE_TIMES', 'FOUNDER_ID', 'OVERLAP_ALLOWED','TIME_STEP',
+                                 'LAG_TIMES', 'CELL_CYCLE_TIMES', 'FOUNDER_ID', 'OVERLAP_ALLOWED', 'TIME_STEP',
                                  'MAXIMUM_NR_DIVISIONS'],
                    verbose=True)
     const = Constants(NR_CYCLES, FOUNDER_COUNT, SAMPLE_COUNT, YIELD, MAXIMUM_NR_AGENTS, MEAN_LAG_TIME,
