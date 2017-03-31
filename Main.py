@@ -1,4 +1,4 @@
-    """This code grows yeast-cells that divide and mutate to adapt to an evolutionary pressure (a toxic environment).
+"""This code grows yeast-cells that divide and mutate to adapt to an evolutionary pressure (a toxic environment).
  The growth happens in cycles where at the end of each cycle the population is reduced to then regrow in the next cycle.
  Over these cycles, agents collect mutations that can change its cycle time, making it divide faster or slower.
 
@@ -73,9 +73,9 @@ def mutate(const, data, mutation, sim_env, nr_divide, to_birth, to_divide_nz, en
         index_free_from_mutation = np.argmin(mutation[to_birth[to_mutate]], 1)
         mutation[to_birth[to_mutate], index_free_from_mutation] = orf_mutation.T[0]  # store mutation
 
+        individual_GT = np.sum(mutation[mutation[to_birth[to_mutate],:] >= 0,:],1)
         sim_env['cell_cycle_time'][to_birth[to_mutate]] = \
-            sim_env['cell_cycle_time'][to_divide_nz[to_mutate]] + \
-            data.gen_time[orf_mutation, environment] * const.MEAN_CELL_CYCLE_TIME
+            2 ** (data.gen_time[orf_mutation, environment] + individual_GT * const.MEAN_CELL_CYCLE_TIME
 
         sim_env['next_division_time'][to_birth[to_mutate]] += \
             sim_env['cell_cycle_time'][to_birth[to_mutate]] - \
@@ -96,7 +96,7 @@ def save_importants(const, save,  i_cycle, distribution_gt, nr_alive, t, mutatio
     distribution_gt[:const.MAXIMUM_NR_AGENTS, i_cycle] = (sim_env['cell_cycle_time'] - const.MEAN_CELL_CYCLE_TIME) / const.MEAN_CELL_CYCLE_TIME
     save.append(('mean_gt', np.mean(distribution_gt[:, i_cycle])))
 
-    s = save_growth(save,  nr_alive, t)
+    save = save_growth(save,  nr_alive, t)
     return save,  distribution_gt
 
 
@@ -107,7 +107,7 @@ def sample_and_reset(const, mutation, sim_env):
     sim_env[:const.SAMPLE_COUNT] = sim_env[sample]
     nr_alive = const.SAMPLE_COUNT
     mutational_sample = mutation[sample]
-    mutation = - np.ones([const.MAXIMUM_NR_AGENTS, 5], dtype='int16')
+    mutation = - np.ones([const.MAXIMUM_NR_AGENTS, 10], dtype='int16')
     mutation[:const.SAMPLE_COUNT] = mutational_sample
     sim_env['next_division_time'][:const.SAMPLE_COUNT] = sim_env['cell_cycle_time'][:const.SAMPLE_COUNT]
     return sim_env, mutation, nr_alive
@@ -127,7 +127,7 @@ def process_data_and_plot(const, data, save,  mutation, environment, plot):
     unique_mutations = unique_mutations[sorted_count_index]
     nr_unique_mutations = nr_unique_mutations[sorted_count_index]
     unique_mutated_orfs = data.orfs[unique_mutations]
-    #print 'Existing ORF mutations: ', unique_mutated_orfs
+    print 'Existing ORF mutations: ', unique_mutated_orfs
     #print 'Corresponding counts: ', nr_unique_mutations
     #print 'Tot. effect of GT in pop.: '
     #print nr_unique_mutations * data.gen_time[unique_mutations, environment] / const.MAXIMUM_NR_AGENTS
@@ -144,7 +144,7 @@ def calc_nr_haplotypes(const, mutation):
     haplo_types = np.zeros(const.MAXIMUM_NR_AGENTS)
     for i in xrange(const.MAXIMUM_NR_AGENTS):
         haplo_types[i] = hash(
-            (m[i, 0], m[i, 1], m[i, 2], m[i, 3], m[i, 4]))#, m[i, 5], m[i, 6], m[i, 7], m[i, 8], m[i, 9]))
+            (m[i, 0], m[i, 1], m[i, 2], m[i, 3], m[i, 4], m[i, 5], m[i, 6], m[i, 7], m[i, 8], m[i, 9]))
 
     nr_haplotypes = len(np.unique(haplo_types))
     print 'Nr. different haploid types: ', nr_haplotypes
@@ -279,7 +279,7 @@ if __name__ == "__main__": # \todo Create functions
 
     # Do After All cycles
     save_processed, unique_mutated_orfs, nr_unique_mutations = \
-        process_data_and_plot(const, data, save,  mutation, environment, plot=0)
+        process_data_and_plot(const, data, save,  mutation, environment, plot=1)
 
     import pickle
 
