@@ -73,9 +73,8 @@ def mutate(const, data, mutation, sim_env, nr_divide, to_birth, to_divide_nz, en
         index_free_from_mutation = np.argmin(mutation[to_birth[to_mutate]], 1)
         mutation[to_birth[to_mutate], index_free_from_mutation] = orf_mutation.T[0]  # store mutation
 
-        individual_GT = np.sum(mutation[mutation[to_birth[to_mutate],:] >= 0,:],1)
         sim_env['cell_cycle_time'][to_birth[to_mutate]] = \
-            2 ** (data.gen_time[orf_mutation, environment] + individual_GT * const.MEAN_CELL_CYCLE_TIME
+            2 ** (data.gen_time[orf_mutation, environment]) * sim_env['cell_cycle_time'][to_birth[to_mutate]]
 
         sim_env['next_division_time'][to_birth[to_mutate]] += \
             sim_env['cell_cycle_time'][to_birth[to_mutate]] - \
@@ -130,7 +129,7 @@ def process_data_and_plot(const, data, save,  mutation, environment, plot):
     print 'Existing ORF mutations: ', unique_mutated_orfs
     #print 'Corresponding counts: ', nr_unique_mutations
     #print 'Tot. effect of GT in pop.: '
-    #print nr_unique_mutations * data.gen_time[unique_mutations, environment] / const.MAXIMUM_NR_AGENTS
+                                                                                                                                                                                                                    #print nr_unique_mutations * data.gen_time[unique_mutations, environment] / const.MAXIMUM_NR_AGENTS
     if plot:
         growth_index = np.where(np.array(save_processed['growth']) == const.MAXIMUM_NR_AGENTS)[0] + 1
         growth_index = np.insert(growth_index, 0, 0)
@@ -291,3 +290,8 @@ if __name__ == "__main__": # \todo Create functions
 
     np.save(dir + 'unique_mutations' + filenumber + '.npy', nr_unique_mutations)
 
+
+# \todo: look at jobscripts for DNA. run wrapper shell script...
+# \todo: Multiprocessing...
+# \todo: Extract data for other sift - scores. Questions?!?!?
+# \todo: Need information of Save directory super computer, Model needs to finnish as well.
