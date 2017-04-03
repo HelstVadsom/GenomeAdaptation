@@ -254,7 +254,7 @@ if __name__ == "__main__": # \todo Create functions
     from InitilizeConstants import *
     from LoadData import orf_target_size_cums, gen_time, orfs
 
-    dir = 'trashData/'  # save directory
+    dir = 'neutralModelData/'  # save directory
     environment = 0
 
     #  MEMORY TABLE:
@@ -278,7 +278,7 @@ if __name__ == "__main__": # \todo Create functions
 
     # Do After All cycles
     save_processed, unique_mutated_orfs, nr_unique_mutations = \
-        process_data_and_plot(const, data, save,  mutation, environment, plot=1)
+        process_data_and_plot(const, data, save,  mutation, environment, plot=0)
 
     import pickle
 
