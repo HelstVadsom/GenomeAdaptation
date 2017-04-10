@@ -1,3 +1,12 @@
+"""This code grows yeast-cells that divide and mutate to adapt to an evolutionary pressure (a toxic environment).
+ The growth happens in cycles where at the end of each cycle the population is reduced to then regrow in the next cycle.
+ Over these cycles, agents collect mutations that can change its cycle time, making it divide faster or slower.
+
+ The size of such a change is determined by deletion data (i.e real measurements of yeast growth change for each Loss of
+ ORF-function for each evolutionary pressure.
+ The likelihood of such mutations is weighted by the yeast's number of Non-Synonymous nucleotides for each ORF."""
+
+
 def lag_f(const, sim_env, i_cycle, lag, is_lagging, t):
     if lag:
         was_lagging = is_lagging
@@ -68,7 +77,7 @@ def mutate(const, data, mutation, sim_env, nr_divide, to_birth, to_divide_nz, en
 
         index_free_from_mutation = np.argmin(mutation[to_birth[to_mutate]], 1)
         mutation[to_birth[to_mutate], index_free_from_mutation] = orf_mutation.T[0]  # store mutation
-
+        #print orf_mutation.T[0]
         #sim_env['cell_cycle_time'][to_birth[to_mutate]] = \
         #    2 ** (data.gen_time[orf_mutation, environment]) * sim_env['cell_cycle_time'][to_birth[to_mutate]]
 
