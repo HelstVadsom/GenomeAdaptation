@@ -1,12 +1,3 @@
-"""This code grows yeast-cells that divide and mutate to adapt to an evolutionary pressure (a toxic environment).
- The growth happens in cycles where at the end of each cycle the population is reduced to then regrow in the next cycle.
- Over these cycles, agents collect mutations that can change its cycle time, making it divide faster or slower.
-
- The size of such a change is determined by deletion data (i.e real measurements of yeast growth change for each Loss of
- ORF-function for each evolutionary pressure.
- The likelihood of such mutations is weighted by the yeast's number of Non-Synonymous nucleotides for each ORF."""
-
-
 def lag_f(const, sim_env, i_cycle, lag, is_lagging, t):
     if lag:
         was_lagging = is_lagging
@@ -37,7 +28,7 @@ def divide(const, data, mutation, sim_env, nr_alive, t, still_in_cycle, environm
             nr_divide = nr_divide_reduced
             sim_env['age'][:const.MAXIMUM_NR_AGENTS] += const.EXPERIMENT_TIME
             still_in_cycle = 0
-            print 'About to exit cycle'
+            #print 'About to exit cycle'
 
         sim_env['founder_id'][to_birth] = to_divide_nz # Copies traits
         sim_env['lag_time'][to_birth] = sim_env['lag_time'][to_divide]
@@ -68,12 +59,12 @@ def mutate(const, data, mutation, sim_env, nr_divide, to_birth, to_divide_nz, en
             # Warning: Above line, Not the same in ipython as pycharm
             # (in ipython this line is to be exec. without the [0]).
             if np.any(overlap):
-                print 'Found mutational overlap'
+                #print 'Found mutational overlap'
                 overlapping_columns = np.nonzero(overlap)[0]
                 orf_mutation = np.delete(orf_mutation, overlapping_columns)  # disposes agents ORF mutation.
                 orf_mutation_nz = np.nonzero(to_mutate)[0]
                 to_mutate[orf_mutation_nz[overlapping_columns]] = False  # prevents agents ORF to mutate.
-                print 'Deleted mutational overlap'
+                #print 'Deleted mutational overlap'
 
         index_free_from_mutation = np.argmin(mutation[to_birth[to_mutate]], 1)
         mutation[to_birth[to_mutate], index_free_from_mutation] = orf_mutation.T[0]  # store mutation
@@ -131,12 +122,12 @@ def process_data_and_plot(const, data, save,  mutation, environment, plot):
     unique_mutations = unique_mutations[sorted_count_index]
     nr_unique_mutations = nr_unique_mutations[sorted_count_index]
     unique_mutated_orfs = data.orfs[unique_mutations]
-    print 'Existing nr ORF mutations: ', np.sum(mutation > 0)
+    #print 'Existing nr ORF mutations: ', np.sum(mutation > 0)
 
     #print 'Existing ORF mutations: ', unique_mutated_orfs
     #print 'Corresponding counts: ', nr_unique_mutations
     #print 'Tot. effect of GT in pop.: '
-    print mutation                                                                                                                                                                                                                #print nr_unique_mutations * data.gen_time[unique_mutations, environment] / const.MAXIMUM_NR_AGENTS
+    #print mutation                                                                                                                                                                                                                #print nr_unique_mutations * data.gen_time[unique_mutations, environment] / const.MAXIMUM_NR_AGENTS
     if plot:
         growth_index = np.where(np.array(save_processed['growth']) == const.MAXIMUM_NR_AGENTS)[0] + 1
         growth_index = np.insert(growth_index, 0, 0)
@@ -180,7 +171,6 @@ def plot_importants(unique_mutated_orfs, nr_unique_mutations, save,  growth_inde
         plt.xticks(np.arange(10) + 0.4, unique_mutated_orfs[-10:],rotation='vertical')
         ax.bar(np.arange(10), nr_unique_mutations[-10:], log=True)
     else:
-        print
         plt.xticks(np.arange(3) + 0.4, unique_mutated_orfs[-3:],rotation='vertical')
         ax.bar(np.arange(3), nr_unique_mutations[-3:], log=True)
     ax.set_xlabel("ORF Names")
@@ -205,7 +195,7 @@ def run(func, const, data, environment, sim_env, mutation):
 
     for i_cycle in xrange(const.NR_CYCLES):
         i_cycle = i_cycle
-        print 'environment = ', environment, 'i_cycle = ', i_cycle
+        #print 'environment = ', environment, 'i_cycle = ', i_cycle
         t = 0
         lag = 1
         is_lagging = np.ones(nr_alive)
