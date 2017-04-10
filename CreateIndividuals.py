@@ -26,4 +26,4 @@ sim_env['founder_id'] = founder_id
 sim_env['age'] = age
 sim_env['nr_divisions'] = nr_divisions
 
-mutation =  - np.ones([MAXIMUM_NR_AGENTS, 5], dtype = 'int16')
+mutation =  - np.ones([MAXIMUM_NR_AGENTS, 10], dtype = 'int16')
