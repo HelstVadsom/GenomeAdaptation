@@ -1,8 +1,8 @@
 import numpy as np
 
 # mutational probability
-orf_target_size = np.loadtxt("targetSizeDel.dat") + \
-                  np.loadtxt("targetSizeStp.dat")
+orf_target_size = (np.loadtxt("targetSizeDel.dat") + \
+                  np.loadtxt("targetSizeStp.dat"))/3
 
 orf_target_size_cums = np.cumsum(orf_target_size)
 
