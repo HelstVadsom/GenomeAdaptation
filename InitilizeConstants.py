@@ -4,7 +4,7 @@ from LoadData import orf_target_size_cums #, data3
 
 # GENERAL
 MUTATION_RATE           = 0.33*10**-9  # per base, per division.
-MUTATION_PROB           = MUTATION_RATE * orf_target_size_cums[-1] / 3
+MUTATION_PROB           = MUTATION_RATE * orf_target_size_cums[-1]
 OVERLAP_ALLOWED         = True  # Is > 1 mutation per orf for each agent allowed? (False recommended)
 TIME_STEP               = 20  #[min]
 
