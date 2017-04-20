@@ -90,6 +90,7 @@ def save_growth(save,  nr_alive, t):
     return save
 
 
+
 def save_importants(const, save,  i_cycle, distribution_gt, nr_alive, t, mutation, sim_env):
     save.append(('nr_haploid_types', len(np.nonzero(mutation[:,0]>=0)[0])))
     #print len(np.nonzero(mutation[:,0]>=0)[0])
@@ -100,7 +101,7 @@ def save_importants(const, save,  i_cycle, distribution_gt, nr_alive, t, mutatio
 
 
 
-def sample_and_reset(const, mutation, sim_env):
+def sample_and_reset(const, mutation, sim_env, i_cycle,save):
     # Sample for next cycle
     sample = np.random.choice(const.MAXIMUM_NR_AGENTS, const.SAMPLE_COUNT, replace=False)
     sim_env[:const.SAMPLE_COUNT] = sim_env[sample]
@@ -110,7 +111,12 @@ def sample_and_reset(const, mutation, sim_env):
     mutation[:const.SAMPLE_COUNT] = mutational_sample
     sim_env['next_division_time'][:const.SAMPLE_COUNT] = sim_env['cell_cycle_time'][:const.SAMPLE_COUNT]
 
-    return sim_env, mutation, nr_alive
+    if ~np.any(mutation >= 0): # extinction
+        save.append(('extinction_at_cycle', i_cycle + 1))
+    elif np.all(mutation[:,0] >= 0): # fixation
+        save.append(('fixation_at_cycle', i_cycle + 1))
+
+    return sim_env, mutation, nr_alive, save
 
 
 def process_data_and_plot(const, data, save,  mutation, environment, plot):
@@ -213,7 +219,7 @@ def run(func, const, data, environment, sim_env, mutation):
         # Do After a cycle
         save, distribution_gt = func.save_importants(const, save,  i_cycle, distribution_gt, nr_alive, t, mutation, sim_env)
         if i_cycle != const.NR_CYCLES - 1:
-            sim_env, mutation, nr_alive = func.sample_and_reset(const, mutation, sim_env)
+            sim_env, mutation, nr_alive, save = func.sample_and_reset(const, mutation, sim_env, i_cycle, save)
 
 
     return save, mutation
@@ -262,6 +268,16 @@ if __name__ == "__main__": # \todo Create functions
     mutation2 = 'YGR097W' # ASK10
     mutation3 = 'YPR201W' # ACR3
 
+    #lag_wt = 804.8
+    lag_fps1 = 276.6
+    lag_ask10 = 503.3
+    lag_acr3 = 630.4
+
+    #cct_wt = 162.3
+    cct_fps1 = 130.2
+    cct_ask10 = 134.6
+    cct_acr3 = 122.8
+
     #  MEMORY TABLE:
     # 'Arsenite'   (environment = 0)
     # 'Citric Acid'(environment = 1)
@@ -279,10 +295,12 @@ if __name__ == "__main__": # \todo Create functions
 
     func = setup_default_run_functions()
 
-    mutation[0,0] = np.where(orfs == mutation1)[0]
-    sim_env['cell_cycle_time'][0] = 2 ** (data.gen_time[mutation[0,0], environment]) * sim_env['cell_cycle_time'][0]
+    mutation[0,0] = np.where(orfs == mutation3)[0]
+    sim_env['cell_cycle_time'][0] = cct_fps1  #2 ** (data.gen_time[mutation[0,0], environment]) * sim_env['cell_cycle_time'][0]
     sim_env['next_division_time'][0] = sim_env['cell_cycle_time'][0]
-    print 'GT: ', data.gen_time[mutation[0,0], environment]
+    sim_env['lag_time'][0] = lag_fps1
+
+    # print 'GT: ', data.gen_time[mutation[0,0], environment]
     print 'CCT: ', sim_env['cell_cycle_time'][0]
     save, mutation = run(func, const, data, environment, sim_env, mutation)
 
