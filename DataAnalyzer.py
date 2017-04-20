@@ -25,6 +25,9 @@ for i in xrange(reading_number):
     big_dic['growth'] = np.concatenate((save_processed['growth'], big_dic['growth']))
     big_dic['growth_time'] = np.concatenate((save_processed['growth_time'], big_dic['growth_time']))
     big_dic['nr_haploid_types'] = np.concatenate((save_processed['nr_haploid_types'], big_dic['nr_haploid_types']))
+    big_dic['fixation_at_cycle'] = np.concatenate((save_processed['fixation_at_cycle'], big_dic['fixation_at_cycle']))
+    big_dic['extinction_at_cycle'] = np.concatenate((save_processed['extinction_at_cycle'], big_dic['extinction_at_cycle']))
+
     print  big_dic['tot_nr_mutate']
     print save_processed['tot_nr_mutate']
     big_dic['tot_nr_mutate'] = np.concatenate((save_processed['tot_nr_mutate'], big_dic['tot_nr_mutate']))
@@ -53,6 +56,8 @@ sio.savemat('growth.mat', {'growth':big_dic['growth']})
 sio.savemat('growth_time.mat', {'growth_time':big_dic['growth_time']})
 sio.savemat('nr_haploid_types.mat', {'nrHaploidTypes':big_dic['nr_haploid_types']})
 sio.savemat('tot_nr_mutate.mat', {'tot_nr_mutate':big_dic['tot_nr_mutate']})
+sio.savemat('fixation_at_cycle.mat', {'fixationAtCycle':big_dic['fixation_at_cycle']})
+sio.savemat('extinction_at_cycle.mat', {'extinctionAtCycle':big_dic['extinction_at_cycle']})
 
 
 
