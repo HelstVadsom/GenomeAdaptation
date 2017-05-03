@@ -7,29 +7,18 @@
  The likelihood of such mutations is weighted by the yeast's number of Non-Synonymous nucleotides for each ORF."""
 
 
-def lag_f(const, sim_env, i_cycle, lag, is_lagging, t):
-    if lag:
-        was_lagging = is_lagging
-        if i_cycle == 0:
-            is_lagging = (sim_env['lag_time'][:const.FOUNDER_COUNT] > t)
-        else:
-            is_lagging = (sim_env['lag_time'][:const.SAMPLE_COUNT] > t)
-        lag = any(is_lagging)
-        sim_env['next_division_time'][is_lagging] += const.TIME_STEP  # Postpone next division
-        lag_escapists = np.bool_(was_lagging * (1 - is_lagging))
-        sim_env['next_division_time'][lag_escapists] -= t - sim_env['lag_time'][lag_escapists]
-    return lag, is_lagging, sim_env
-
-
 def divide(const, data, mutation, sim_env, nr_alive, t, still_in_cycle, environment):
+
     to_divide = (sim_env['next_division_time'][:nr_alive] <= t) * \
                 (sim_env['nr_divisions'][:nr_alive] <= const.MAXIMUM_NR_DIVISIONS)
     nr_divide = np.sum(to_divide)
+
     if nr_divide:
         to_divide_nz = np.nonzero(to_divide)[0]
         to_birth = np.arange(nr_alive, (nr_alive + nr_divide))
 
-        if nr_alive + len(to_birth) >= const.MAXIMUM_NR_AGENTS: # Checks if it's time to begin a new cycle.
+	# Check if it's time to begin a new cycle.
+        if nr_alive + len(to_birth) >= const.MAXIMUM_NR_AGENTS: 
             nr_divide_reduced = const.MAXIMUM_NR_AGENTS - nr_alive
             to_birth = np.arange(nr_alive, (nr_alive + nr_divide_reduced))
             to_divide_nz = to_divide_nz[np.random.choice(nr_divide, nr_divide_reduced, replace=False)]
@@ -39,6 +28,7 @@ def divide(const, data, mutation, sim_env, nr_alive, t, still_in_cycle, environm
             still_in_cycle = 0
             print 'About to exit cycle'
 
+	# Transfer traits
         sim_env['founder_id'][to_birth] = to_divide_nz # Copies traits
         sim_env['lag_time'][to_birth] = sim_env['lag_time'][to_divide]
         sim_env['cell_cycle_time'][to_birth] = sim_env['cell_cycle_time'][to_divide]
@@ -46,22 +36,30 @@ def divide(const, data, mutation, sim_env, nr_alive, t, still_in_cycle, environm
         sim_env['next_division_time'][to_birth] = sim_env['next_division_time'][to_divide]
         sim_env['nr_divisions'][to_divide] += 1
         mutation[to_birth] = mutation[to_divide]
-
+	
+	# Mutate
         sim_env, mutation = mutate(const, data, mutation, sim_env, nr_divide, to_birth, to_divide_nz, environment)
+	
         nr_alive += nr_divide
+
     return nr_alive, sim_env, mutation, still_in_cycle
 
 
 def mutate(const, data, mutation, sim_env, nr_divide, to_birth, to_divide_nz, environment):
+
     to_mutate = np.random.random(nr_divide) < const.MUTATION_PROB
+
     if any(to_mutate):
         mutation_cite = np.random.random([sum(to_mutate), 1]) * (data.orf_target_size_cums[-1])  # pick mutation
         orf_mutation = np.searchsorted(data.orf_target_size_cums, mutation_cite, side='right')  # peek mutation
-
+	
+	# Remove any mutational overlap
+	# (Agents can't have two mutations in the same ORF because that will equate to double the fitness.)
         if ~const.OVERLAP_ALLOWED:
-            overlap = (mutation[[to_birth[to_mutate]], :] == orf_mutation)[0]  # forbids > 1 mutation per orf for each agent.
+            overlap = (mutation[[to_birth[to_mutate]], :] == orf_mutation)[0] 
             # Warning: Above line, Not the same in ipython as pycharm
             # (in ipython this line is to be exec. without the [0]).
+
             if np.any(overlap):
                 print 'Found mutational overlap'
                 overlapping_columns = np.nonzero(overlap)[0]
@@ -69,10 +67,12 @@ def mutate(const, data, mutation, sim_env, nr_divide, to_birth, to_divide_nz, en
                 orf_mutation_nz = np.nonzero(to_mutate)[0]
                 to_mutate[orf_mutation_nz[overlapping_columns]] = False  # prevents agents ORF to mutate.
                 print 'Deleted mutational overlap'
-
+       
+        # Store mutation
         index_free_from_mutation = np.argmin(mutation[to_birth[to_mutate]], 1)
-        mutation[to_birth[to_mutate], index_free_from_mutation] = orf_mutation.T[0]  # store mutation
-
+        mutation[to_birth[to_mutate], index_free_from_mutation] = orf_mutation.T[0] 
+	
+	# Determine mutational effects 
         sim_env['cell_cycle_time'][to_birth[to_mutate]] = \
             2 ** (data.gen_time[orf_mutation, environment]) * sim_env['cell_cycle_time'][to_birth[to_mutate]]
 
@@ -83,24 +83,27 @@ def mutate(const, data, mutation, sim_env, nr_divide, to_birth, to_divide_nz, en
     return sim_env, mutation
 
 
-
 def save_growth(save,  nr_alive, t):
+
     save.append(('growth', nr_alive))
     save.append(('growth_time', t))
+
     return save
 
 
 def save_importants(const, save,  i_cycle, distribution_gt, nr_alive, t, mutation, sim_env):
-    save.append(('nr_haploid_types', calc_nr_haplotypes(const, mutation)))
-    distribution_gt[:const.MAXIMUM_NR_AGENTS, i_cycle] = (sim_env['cell_cycle_time'] - const.MEAN_CELL_CYCLE_TIME) / const.MEAN_CELL_CYCLE_TIME
-    save.append(('mean_gt', np.mean(distribution_gt[:, i_cycle])))
 
+    save.append(('nr_haploid_types', calc_nr_haplotypes(const, mutation)))
+    distribution_gt[:const.MAXIMUM_NR_AGENTS, i_cycle] = np.log2(sim_env['cell_cycle_time'] \
+	/ const.MEAN_CELL_CYCLE_TIME) # Effective gt
+    save.append(('mean_gt', np.mean(distribution_gt[:, i_cycle])))
     save = save_growth(save,  nr_alive, t)
+
     return save,  distribution_gt
 
 
+def sample_and_reset(const, mutation, sim_env, t):
 
-def sample_and_reset(const, mutation, sim_env):
     # Sample for next cycle
     sample = np.random.choice(const.MAXIMUM_NR_AGENTS, const.SAMPLE_COUNT, replace=False)
     sim_env[:const.SAMPLE_COUNT] = sim_env[sample]
@@ -108,17 +111,24 @@ def sample_and_reset(const, mutation, sim_env):
     mutational_sample = mutation[sample]
     mutation = - np.ones([const.MAXIMUM_NR_AGENTS, 10], dtype='int16')
     mutation[:const.SAMPLE_COUNT] = mutational_sample
-    sim_env['next_division_time'][:const.SAMPLE_COUNT] = sim_env['cell_cycle_time'][:const.SAMPLE_COUNT]
+
+    sim_env['next_division_time'][:const.SAMPLE_COUNT] = sim_env['lag_time'][:const.SAMPLE_COUNT] + \
+        sim_env['next_division_time'][:const.SAMPLE_COUNT] - t # Continues growth
+    #sim_env['next_division_time'][:const.SAMPLE_COUNT] = sim_env['lag_time'][:const.SAMPLE_COUNT] + \
+	#sim_env['cell_cycle_time'][:const.SAMPLE_COUNT] # Resets growth
+
     return sim_env, mutation, nr_alive
 
 
 def process_data_and_plot(const, data, save,  mutation, environment, plot):
+
     save_processed  = dd(list)
     for k, v in save:
         save_processed[k].append(v)
 
     unique_mutations = np.unique(mutation[mutation >= 0])
     nr_unique_mutations = np.zeros(len(unique_mutations))
+
     for mut in enumerate(unique_mutations):
         nr_unique_mutations[mut[0]] = np.count_nonzero(mutation == mut[1])
     sorted_count_index = np.argsort(nr_unique_mutations)
@@ -126,10 +136,12 @@ def process_data_and_plot(const, data, save,  mutation, environment, plot):
     unique_mutations = unique_mutations[sorted_count_index]
     nr_unique_mutations = nr_unique_mutations[sorted_count_index]
     unique_mutated_orfs = data.orfs[unique_mutations]
-    print 'Existing ORF mutations: ', unique_mutated_orfs
+
+    #print 'Existing nr ORF mutations: ', np.sum(mutation > 0)
     #print 'Corresponding counts: ', nr_unique_mutations
     #print 'Tot. effect of GT in pop.: '
-                                                                                                                                                                                                                    #print nr_unique_mutations * data.gen_time[unique_mutations, environment] / const.MAXIMUM_NR_AGENTS
+    #print nr_unique_mutations * data.gen_time[unique_mutations, environment] / const.MAXIMUM_NR_AGENTS
+
     if plot:
         growth_index = np.where(np.array(save_processed['growth']) == const.MAXIMUM_NR_AGENTS)[0] + 1
         growth_index = np.insert(growth_index, 0, 0)
@@ -146,7 +158,7 @@ def calc_nr_haplotypes(const, mutation):
             (m[i, 0], m[i, 1], m[i, 2], m[i, 3], m[i, 4], m[i, 5], m[i, 6], m[i, 7], m[i, 8], m[i, 9]))
 
     nr_haplotypes = len(np.unique(haplo_types))
-    print 'Nr. different haploid types: ', nr_haplotypes
+    #print 'Nr. different haploid types: ', nr_haplotypes
     return nr_haplotypes
 
 
@@ -188,36 +200,6 @@ def plot_importants(unique_mutated_orfs, nr_unique_mutations, save,  growth_inde
     plt.show()
 
 
-def run(func, const, data, environment, sim_env, mutation):
-
-    save = [('growth', const.FOUNDER_COUNT), ('growth_time', 0), ('nr_haploid_types', 0)] # 1D saveables
-    distribution_gt = np.zeros([const.MAXIMUM_NR_AGENTS, const.NR_CYCLES])
-
-    nr_alive = const.FOUNDER_COUNT
-
-    for i_cycle in xrange(const.NR_CYCLES):
-        i_cycle = i_cycle
-        print 'environment = ', environment, 'i_cycle = ', i_cycle
-        t = 0
-        lag = 1
-        is_lagging = np.ones(nr_alive)
-        still_in_cycle = 1
-        while still_in_cycle:
-            lag, is_lagging, sim_env = func.lag_f(const, sim_env, i_cycle, lag, is_lagging, t)
-            save = func.save_growth(save,  nr_alive, t)
-            t += const.TIME_STEP
-            nr_alive, sim_env, mutation, still_in_cycle = \
-                func.divide(const, data, mutation, sim_env, nr_alive, t, still_in_cycle, environment)
-
-        # Do After a cycle
-        save, distribution_gt = func.save_importants(const, save,  i_cycle, distribution_gt, nr_alive, t, mutation, sim_env)
-        if i_cycle != const.NR_CYCLES - 1:
-            sim_env, mutation, nr_alive = func.sample_and_reset(const, mutation, sim_env)
-
-
-    return save, mutation
-
-
 def load_default_static_simulation_settings():
 
     Constants = nt('Constants', ['NR_CYCLES', 'FOUNDER_COUNT', 'SAMPLE_COUNT', 'YIELD', 'MAXIMUM_NR_AGENTS',
@@ -233,17 +215,47 @@ def load_default_static_simulation_settings():
 
 
 def setup_data_structure():
+
     Data = nt('Data', ['orf_target_size_cums', 'gen_time', 'orfs'], verbose=True)
     data = Data(orf_target_size_cums, gen_time, orfs)
+
     return data
 
 
 def setup_default_run_functions():
 
-    Functions = nt('Functions', ['lag_f', 'save_growth', 'divide', 'save_importants', 'sample_and_reset'], verbose=True)
-    func = Functions(lag_f, save_growth, divide, save_importants, sample_and_reset)
+    Functions = nt('Functions', ['save_growth', 'divide', 'save_importants', 'sample_and_reset'], verbose=True)
+    func = Functions(save_growth, divide, save_importants, sample_and_reset)
 
     return func
+
+
+def run(func, const, data, environment, sim_env, mutation):
+
+    save = [('growth', const.FOUNDER_COUNT), ('growth_time', 0), ('nr_haploid_types', 0)] # 1D saveables
+    distribution_gt = np.zeros([const.MAXIMUM_NR_AGENTS, const.NR_CYCLES])
+
+    nr_alive = const.FOUNDER_COUNT
+
+    for i_cycle in xrange(const.NR_CYCLES):
+        i_cycle = i_cycle
+        #print 'environment = ', environment, 'i_cycle = ', i_cycle
+        t = 0
+        still_in_cycle = 1
+        
+        while still_in_cycle:
+            save = func.save_growth(save,  nr_alive, t)
+            t += const.TIME_STEP
+            nr_alive, sim_env, mutation, still_in_cycle = \
+                func.divide(const, data, mutation, sim_env, nr_alive, t, still_in_cycle, environment)
+
+        # Do After a cycle
+        save, distribution_gt = func.save_importants(const, save,  i_cycle, distribution_gt, nr_alive, t, mutation, sim_env)
+        if i_cycle != const.NR_CYCLES - 1:
+            sim_env, mutation, nr_alive = func.sample_and_reset(const, mutation, sim_env, t)
+
+
+    return save, mutation, distribution_gt
 
 
 if __name__ == "__main__": # \todo Create functions
@@ -254,12 +266,12 @@ if __name__ == "__main__": # \todo Create functions
     from InitilizeConstants import *
     from LoadData import orf_target_size_cums, gen_time, orfs
 
-    dir = 'neutralModelData/'  # save directory
+    dir = 'trashData/'  # save directory
     environment = 0
 
     #  MEMORY TABLE:
     # 'Arsenite'   (environment = 0)
-    # 'Citric_Acid'(environment = 1)
+    # 'Citric Acid'(environment = 1)
     # 'Citrulline' (environment = 2)
     # 'Glycine'    (environment = 3)
     # 'Isoleucine' (environment = 4)
@@ -289,9 +301,5 @@ if __name__ == "__main__": # \todo Create functions
     np.save(dir + 'mutated_orfs' + filenumber + '.npy', unique_mutated_orfs)
 
     np.save(dir + 'unique_mutations' + filenumber + '.npy', nr_unique_mutations)
-
-
-# \todo: look at jobscripts for DNA. run wrapper shell script...
-# \todo: Multiprocessing...
-# \todo: Extract data for other sift - scores. Questions?!?!?
-# \todo: Need information of Save directory super computer, Model needs to finnish as well.
+	
+    np.save(dir + 'distribution_gt' + filenumber + '.npy', distribution_gt)
