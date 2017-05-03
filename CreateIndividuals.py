@@ -21,7 +21,7 @@ sim_env = np.zeros(MAXIMUM_NR_AGENTS, dtype={'names':['lag_time', 'cell_cycle_ti
 # initilize
 sim_env['lag_time'] = lag_time
 sim_env['cell_cycle_time'] = cell_cycle_time
-sim_env['next_division_time']  = cell_cycle_time
+sim_env['next_division_time']  = lag_time + cell_cycle_time
 sim_env['founder_id'] = founder_id
 sim_env['age'] = age
 sim_env['nr_divisions'] = nr_divisions
