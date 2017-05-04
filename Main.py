@@ -266,7 +266,7 @@ if __name__ == "__main__": # \todo Create functions
     from InitilizeConstants import *
     from LoadData import orf_target_size_cums, gen_time, orfs
 
-    dir = 'trashData/'  # save directory
+    dir = 'dataRaw/'  # save directory
     environment = 0
 
     #  MEMORY TABLE:
@@ -286,7 +286,7 @@ if __name__ == "__main__": # \todo Create functions
 
     func = setup_default_run_functions()
 
-    save, mutation = run(func, const, data, environment, sim_env, mutation)
+    save, mutation, distribution_gt = run(func, const, data, environment, sim_env, mutation)
 
     # Do After All cycles
     save_processed, unique_mutated_orfs, nr_unique_mutations = \
